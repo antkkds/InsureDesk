@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Mock Portal — Documents</title>
+<style>
+  body { font-family: Arial; margin: 0; background: #f0f2f5; }
+  nav { background: #1a1a2e; color: white; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+  nav a { color: #ccc; text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: 4px; }
+  nav a:hover { color: white; background: rgba(255,255,255,0.1); }
+  .user-info { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .user-profile-name { font-size: 14px; color: #ccc; }
+  .content { padding: 24px; max-width: 700px; }
+  .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 16px; }
+  .card h2 { margin-top: 0; color: #1a1a2e; }
+  .doc-list { list-style: none; padding: 0; }
+  .doc-list li { padding: 10px 0; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center; }
+  button { padding: 8px 20px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+  button:hover { background: #0052a3; }
+</style>
+</head>
+<body>
+<nav>
+  <strong>Mock Portal</strong>
+  <a href="/dashboard.html">Dashboard</a>
+  <a href="/search.html">Policy</a>
+  <a href="/claims.html">Claims</a>
+  <a href="/documents.html">Documents</a>
+  <div class="user-info">
+    <span class="user-profile-name">Anthony Chong</span>
+    <a href="/index.html" style="color:#999;">Logout</a>
+  </div>
+</nav>
+<div class="content">
+  <h2>Documents</h2>
+  <div class="card">
+    <h3>Upload Document</h3>
+    <input type="file" name="document" />
+    <button style="margin-top:8px;" onclick="alert('Uploaded!')">Upload</button>
+  </div>
+  <div class="card">
+    <h3>My Documents</h3>
+    <ul class="doc-list">
+      <li><span>Policy Schedule — GE-2024-001234.pdf</span><button>Download</button></li>
+      <li><span>Claim Report — CL-2023-089.pdf</span><button>Download</button></li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

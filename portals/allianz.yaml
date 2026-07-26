@@ -1,0 +1,38 @@
+# Allianz Malaysia Portal Mapping
+
+portal:
+  name: "Allianz Malaysia"
+  short_name: "Allianz"
+  base_url: "https://allianz.com.my"
+  login_url: "https://agency.allianz.com.my/login"
+  adapter: "allianz"
+
+selectors:
+  login:
+    username: "input[name='userid']"
+    password: "input[name='password']"
+    submit: "button[type='submit']"
+
+  policy_search:
+    nav_link: "a:has-text('Policy Inquiry')"
+    search_input: "input[name='policyNo']"
+    search_button: "button:has-text('Search')"
+    policy_row: "tr.policy-row"
+
+  claims:
+    nav_link: "a:has-text('Claims')"
+    new_claim_button: "button:has-text('New Claim')"
+    policy_no_field: "select[name='policyNo']"
+    claim_type: "select[name='claimType']"
+    incident_date: "input[name='incidentDate']"
+    description: "textarea[name='description']"
+    submit_button: "button:has-text('Submit Claim')"
+
+  documents:
+    nav_link: "a:has-text('Documents')"
+    upload_button: "button:has-text('Upload')"
+    file_input: "input[type='file']"
+
+  renewal:
+    nav_link: "a:has-text('Renewals')"
+    renew_button: "button:has-text('Proceed to Renew')"

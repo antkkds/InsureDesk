@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Mock Portal — Claims</title>
+<style>
+  body { font-family: Arial; margin: 0; background: #f0f2f5; }
+  nav { background: #1a1a2e; color: white; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+  nav a { color: #ccc; text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: 4px; }
+  nav a:hover { color: white; background: rgba(255,255,255,0.1); }
+  .user-info { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .user-profile-name { font-size: 14px; color: #ccc; }
+  .content { padding: 24px; max-width: 700px; }
+  .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 16px; }
+  .card h2 { margin-top: 0; color: #1a1a2e; }
+  label { display: block; font-size: 14px; color: #555; margin: 12px 0 4px; }
+  input, select, textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+  textarea { height: 80px; resize: vertical; }
+  button { padding: 10px 24px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-top: 16px; margin-right: 8px; }
+  .btn-primary { background: #0066cc; color: white; }
+  .btn-primary:hover { background: #0052a3; }
+  .btn-secondary { background: #6c757d; color: white; }
+  .claim-status { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; background: #fff3cd; color: #856404; }
+</style>
+</head>
+<body>
+<nav>
+  <strong>Mock Portal</strong>
+  <a href="/dashboard.html">Dashboard</a>
+  <a href="/search.html">Policy</a>
+  <a href="/claims.html">Claims</a>
+  <a href="/documents.html">Documents</a>
+  <div class="user-info">
+    <span class="user-profile-name">Anthony Chong</span>
+    <a href="/index.html" style="color:#999;">Logout</a>
+  </div>
+</nav>
+<div class="content">
+  <h2>Submit a Claim</h2>
+  <div id="success-message" style="display:none;background:#d4edda;color:#155724;padding:12px;border-radius:4px;margin-bottom:16px;">
+    Your claim has been submitted. Reference: CL-2024-001
+  </div>
+  <div class="card">
+    <form id="claim-form" onsubmit="event.preventDefault();submitClaim()">
+      <label for="policyNo">Policy Number</label>
+      <input type="text" id="policyNo" name="policyNo" value="GE-2024-001234" />
+
+      <label for="incidentDate">Incident Date</label>
+      <input type="date" id="incidentDate" name="incidentDate" />
+
+      <label for="claimType">Claim Type</label>
+      <select id="claimType" name="claimType">
+        <option value="">Select type...</option>
+        <option value="fire">Fire Damage</option>
+        <option value="flood">Flood Damage</option>
+        <option value="theft">Theft</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label for="description">Description</label>
+      <textarea id="description" name="description" placeholder="Describe the incident..."></textarea>
+
+      <label>Upload Evidence</label>
+      <input type="file" name="evidence" />
+
+      <div>
+        <button type="submit" class="btn-primary">Submit Claim</button>
+        <button type="reset" class="btn-secondary">Cancel</button>
+      </div>
+    </form>
+  </div>
+  <div class="card">
+    <h3>Your Claims</h3>
+    <span class="claim-status">Pending Review</span>
+    <p style="margin-top:12px;font-size:14px;color:#666;">
+      Claim CL-2023-089 — Submitted on 15/11/2023
+    </p>
+  </div>
+</div>
+<script>
+function submitClaim() {
+  document.getElementById('success-message').style.display = 'block';
+  document.getElementById('claim-form').reset();
+}
+</script>
+</body>
+</html>

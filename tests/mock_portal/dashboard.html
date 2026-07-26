@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Mock Portal — Dashboard</title>
+<style>
+  body { font-family: Arial; margin: 0; background: #f0f2f5; }
+  nav { background: #1a1a2e; color: white; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+  nav a { color: #ccc; text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: 4px; }
+  nav a:hover { color: white; background: rgba(255,255,255,0.1); }
+  .user-info { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .user-profile-name { font-size: 14px; color: #ccc; }
+  .welcome-message { font-size: 24px; color: #1a1a2e; margin: 24px; }
+  .content { padding: 24px; }
+  .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 16px; }
+  .card h3 { margin-top: 0; color: #1a1a2e; }
+  a { color: #0066cc; }
+</style>
+</head>
+<body>
+<nav>
+  <strong>Mock Portal</strong>
+  <a href="/dashboard.html">Dashboard</a>
+  <a href="/search.html">Policy</a>
+  <a href="/claims.html">Claims</a>
+  <a href="/documents.html">Documents</a>
+  <div class="user-info">
+    <span class="user-profile-name">Anthony Chong</span>
+    <a href="/index.html" style="color:#999;">Logout</a>
+  </div>
+</nav>
+<div class="welcome-message">Welcome back, Anthony Chong</div>
+<div class="content">
+  <div class="card">
+    <h3>My Policies</h3>
+    <p>You have <strong>3 active policies</strong>.</p>
+  </div>
+  <div class="card">
+    <h3>Recent Claims</h3>
+    <p>No recent claims found.</p>
+  </div>
+</div>
+</body>
+</html>

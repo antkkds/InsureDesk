@@ -1,0 +1,30 @@
+# AIA Malaysia Portal Mapping
+
+portal:
+  name: "AIA Malaysia"
+  short_name: "AIA"
+  base_url: "https://aia.com.my"
+  login_url: "https://e-connect.aia.com.my/login"
+  adapter: "aia"
+
+selectors:
+  login:
+    username: "input[name='username']"
+    password: "input[name='password']"
+    submit: "button[type='submit']"
+    otp_field: "input[name='otp']"
+
+  policy_search:
+    nav_link: "a:has-text('Policy')"
+    search_input: "input[placeholder='Search Policy']"
+    search_button: "button:has-text('Search')"
+
+  claims:
+    nav_link: "a:has-text('Claims')"
+    new_claim_button: "a:has-text('Submit Claim')"
+    submit_button: "button:has-text('Submit')"
+
+  documents:
+    nav_link: "a:has-text('Documents')"
+    upload_button: "button:has-text('Upload Document')"
+    file_input: "input[type='file']"

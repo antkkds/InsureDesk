@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Mock Portal — Policy Details</title>
+<style>
+  body { font-family: Arial; margin: 0; background: #f0f2f5; }
+  nav { background: #1a1a2e; color: white; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+  nav a { color: #ccc; text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: 4px; }
+  nav a:hover { color: white; background: rgba(255,255,255,0.1); }
+  .user-info { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .user-profile-name { font-size: 14px; color: #ccc; }
+  .content { padding: 24px; max-width: 800px; }
+  .card { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 16px; }
+  .card h2 { margin-top: 0; color: #1a1a2e; }
+  .detail-row { display: flex; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+  .detail-label { width: 160px; color: #777; font-size: 14px; }
+  .detail-value { flex: 1; font-weight: 500; }
+  .policy-number { font-size: 18px; font-weight: bold; color: #1a1a2e; }
+  .policy-status { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 13px; background: #d4edda; color: #155724; }
+  .premium-amount { font-size: 24px; color: #0066cc; font-weight: bold; }
+  .coverage-details { margin-top: 16px; }
+  .coverage-details ul { list-style: none; padding: 0; }
+  .coverage-details li { padding: 6px 0; }
+  .coverage-details li:before { content: "✅ "; }
+  button { padding: 10px 24px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-top: 16px; }
+  button:hover { background: #0052a3; }
+</style>
+</head>
+<body>
+<nav>
+  <strong>Mock Portal</strong>
+  <a href="/dashboard.html">Dashboard</a>
+  <a href="/search.html">Policy</a>
+  <a href="/claims.html">Claims</a>
+  <a href="/documents.html">Documents</a>
+  <div class="user-info">
+    <span class="user-profile-name">Anthony Chong</span>
+    <a href="/index.html" style="color:#999;">Logout</a>
+  </div>
+</nav>
+<div class="content">
+  <div class="card">
+    <div class="policy-number">GE-2024-001234</div>
+    <span class="policy-status">Active</span>
+
+    <div class="detail-row"><span class="detail-label">Premium</span><span class="premium-amount">RM 2,450.00</span></div>
+    <div class="detail-row"><span class="detail-label">Start Date</span><span class="start-date">01/03/2024</span></div>
+    <div class="detail-row"><span class="detail-label">End Date</span><span class="expiry-date">28/02/2025</span></div>
+
+    <div class="coverage-details">
+      <h3>Coverage Details</h3>
+      <ul>
+        <li>Fire & Lightning</li>
+        <li>Explosion</li>
+        <li>Flood & Typhoon</li>
+      </ul>
+    </div>
+
+    <button id="download-btn" onclick="alert('Downloading...')">Download PDF</button>
+  </div>
+</div>
+</body>
+</html>

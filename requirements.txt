@@ -1,0 +1,7 @@
+# InsureDesk — Dependencies
+
+PySide6>=6.5
+playwright>=1.40
+sqlalchemy>=2.0
+requests>=2.31
+pyyaml>=6.0

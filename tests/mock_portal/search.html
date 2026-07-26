@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Mock Portal — Policy Search</title>
+<style>
+  body { font-family: Arial; margin: 0; background: #f0f2f5; }
+  nav { background: #1a1a2e; color: white; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+  nav a { color: #ccc; text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: 4px; }
+  nav a:hover { color: white; background: rgba(255,255,255,0.1); }
+  .user-info { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .user-profile-name { font-size: 14px; color: #ccc; }
+  .content { padding: 24px; }
+  .search-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin-bottom: 16px; display: flex; gap: 12px; align-items: end; }
+  label { display: block; font-size: 13px; color: #555; margin-bottom: 4px; }
+  input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; width: 250px; }
+  button { padding: 8px 20px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  button:hover { background: #0052a3; }
+  .policy-search-results { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 10px; border-bottom: 1px solid #eee; }
+  .policy-row { cursor: pointer; }
+  .policy-row:hover { background: #f5f8ff; }
+</style>
+</head>
+<body>
+<nav>
+  <strong>Mock Portal</strong>
+  <a href="/dashboard.html">Dashboard</a>
+  <a href="/search.html">Policy</a>
+  <a href="/claims.html">Claims</a>
+  <a href="/documents.html">Documents</a>
+  <div class="user-info">
+    <span class="user-profile-name">Anthony Chong</span>
+    <a href="/index.html" style="color:#999;">Logout</a>
+  </div>
+</nav>
+<div class="content">
+  <h2>Policy Search</h2>
+  <div class="search-box">
+    <div>
+      <label for="policyNo">Policy Number</label>
+      <input type="text" id="policyNo" name="policyNo" placeholder="e.g. GE-2024-001234" />
+    </div>
+    <button id="search-btn" onclick="doSearch()">Search</button>
+  </div>
+  <div class="policy-search-results" id="results" style="display:none;">
+    <table>
+      <thead><tr><th>Policy No</th><th>Type</th><th>Status</th><th>Premium</th></tr></thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+function doSearch() {
+  const no = document.getElementById('policyNo').value;
+  if (!no) return;
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results-body').innerHTML = 
+    '<tr class="policy-row" onclick="location.href=\'/policy.html?no=' + no + '\'">' +
+    '<td>' + no + '</td><td>Fire Insurance</td><td>Active</td><td>RM 2,450.00</td></tr>';
+}
+</script>
+</body>
+</html>
