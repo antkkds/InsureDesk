@@ -2,13 +2,9 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
-dist/
-build/
-.eggs/
-
-# Virtual environment
-venv/
+*.egg
 .venv/
+venv/
 env/
 
 # IDE
@@ -21,14 +17,12 @@ env/
 .DS_Store
 Thumbs.db
 
-# Project
-*.db
-*.sqlite3
-.insuredesk/
-.key
+# Hermes / debug
+.hermes_temp/
+_*.py
+*.ps1
 
-# pytest
-.pytest_cache/
-
-# Node
-node_modules/
+# Local state
+*.local.yaml
+credentials.yaml
+*.log

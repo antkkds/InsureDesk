@@ -13,7 +13,11 @@ from dataclasses import dataclass, field
 from src.portal.mapping import load_portal_mapping, get_selector, list_available_portals, PortalMapping
 from src.portal.form_engine import FormEngine
 from src.portal.session import SessionManager
+from src.portal.navigation import NavigationEngine
 from src.browser.driver import BrowserEngine
+from src.fill.engine import FillEngine
+from src.fill.schema import FillSchema, schemas_from_yaml
+from src.fill.transformer import TransformerRegistry
 
 
 @dataclass
@@ -42,6 +46,10 @@ class PortalAdapter(ABC):
         self._engine = engine
         self.form = FormEngine(engine)
         self.session = SessionManager()
+        self.nav = NavigationEngine(self)
+        self._fill: Optional[FillEngine] = None
+        self._fill_schemas: dict[str, FillSchema] = {}
+        self._transformers: Optional[TransformerRegistry] = None
         self._logged_in = False
 
     @property
@@ -76,6 +84,42 @@ class PortalAdapter(ABC):
         """Get a selector from the mapping by path."""
         sel = get_selector(self.mapping, *path)
         return sel or ""
+
+    async def navigate(self, route_name: str) -> bool:
+        """Navigate to a logical route (delegates to NavigationEngine)."""
+        return await self.nav.navigate(route_name)
+
+    # ── Fill Engine (Phase 4.2) ──
+
+    @property
+    def fill(self) -> FillEngine:
+        """Lazy-initialized FillEngine for this portal."""
+        if self._fill is None:
+            self._init_fill()
+        return self._fill
+
+    @property
+    def fill_schemas(self) -> dict[str, FillSchema]:
+        """Lazy-loaded fill schemas from YAML mapping."""
+        if not self._fill_schemas and self.mapping and self.mapping.schemas:
+            # self.mapping.schemas is raw YAML dict, need to parse
+            for section_name, section_data in self.mapping.schemas.items():
+                if isinstance(section_data, dict):
+                    from src.fill.schema import fill_schema_from_dict
+                    self._fill_schemas[section_name] = fill_schema_from_dict(
+                        section_name, section_data
+                    )
+        return self._fill_schemas
+
+    def _init_fill(self):
+        """Initialize the FillEngine and its dependencies."""
+        # Create transformer registry from YAML
+        transformers = TransformerRegistry()
+        if self.mapping and self.mapping.transformers:
+            transformers.register_from_yaml(self.mapping.transformers)
+
+        self._transformers = transformers
+        self._fill = FillEngine(transformer_registry=transformers)
 
     # ── Connection ──
 

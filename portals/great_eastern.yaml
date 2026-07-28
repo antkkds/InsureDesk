@@ -1,22 +1,39 @@
-# Great Eastern Malaysia (i-Connect) Portal Mapping
-# Each portal has selectors, URLs, and field mappings.
+# Great Eastern General Insurance (GEGLink) Portal Mapping
+# Each portal has selectors, URLs, field mappings, and workflow definitions.
 # When GE changes their UI, update this file — no code changes needed.
+#
+# Field selectors marked with "# CAPTURE NEEDED" are placeholders from the
+# general portal inspection. Run Capture Mode to confirm actual selectors
+# on the live IFE/EQ quotation form.
 
 portal:
   name: "Great Eastern"
   short_name: "GE"
-  base_url: "https://iconnect.greateasternlife.com"
-  login_url: "https://iconnect.greateasternlife.com/login"
+  base_url: "https://geglink.greateasterngeneral.com"
+  login_url: "https://geglink.greateasterngeneral.com/geglink/userlogin.html"
+  login_action: "https://geglink.greateasterngeneral.com/geglink/submitlogin.html"
   adapter: "great_eastern"
+
+  # Supported products and their codes
+  products:
+    IFE:
+      name: "Individual Fire Insurance"
+      code: "IFE"
+    EQ:
+      name: "Equipment All Risks"
+      code: "EQ"
+    Motor:
+      name: "Motor Insurance"
+      code: "MOTOR"
 
 selectors:
   # ── Login ──
   login:
-    username: "#username"
-    password: "#password"
-    submit: "button[type='submit']"
-    login_button: "#login-btn"
-    remember_me: "#remember"
+    username: "input[name='oac_username']"
+    password: "input[name='oac_intpwd']"
+    password_id: "txt_loginpass"
+    submit: "input[src*='loginbut.jpg']"
+    submit_type: "image"
 
   # ── Dashboard / Post-login ──
   dashboard:
@@ -78,11 +95,276 @@ selectors:
     customer_name: ".customer-name"
     customer_ic: ".customer-ic"
 
-  # ── Quotation ──
+  # ── Quotation / New Business ──
+  # Structured field definitions for quote calculation forms.
+  # Each field has:
+  #   selector  — CSS selector for the form element
+  #   type      — input field type: text / select / checkbox / radio / date / number
+  #   required  — whether the field is mandatory
+  #   options   — for select fields, available options (if known)
   quotation:
+    # ── Navigation ──
     nav_link: "a:has-text('Quotation')"
-    product_select: "#productSelect"
-    customer_select: "#customerSelect"
-    calculate_button: "button:has-text('Calculate')"
-    premium_display: ".quoted-premium"
-    issue_button: "button:has-text('Issue Policy')"
+
+    # ── Product Selection ──
+    product_select:
+      selector: "#productSelect"
+      type: select
+      required: true
+      options:
+        IFE: "IFE - Fire Insurance"
+        EQ: "EQ - Equipment"
+        Motor: "Motor - Motor Insurance"
+
+    # ── Customer Selection (if using existing customer) ──
+    customer_select:
+      selector: "#customerSelect"
+      type: select
+
+    # ── Risk / Property Fields ──
+    # These are the primary IFE quotation fields.
+    # CAPTURE NEEDED: Run Capture Mode on GEGLink IFE form to confirm selectors.
+    fields:
+      # Property & Location
+      property_address:
+        selector: "input[name='propAddr']"         # CAPTURE NEEDED
+        type: text
+        required: true
+      property_postcode:
+        selector: "input[name='propPostcode']"      # CAPTURE NEEDED
+        type: text
+      property_city:
+        selector: "input[name='propCity']"          # CAPTURE NEEDED
+        type: text
+      property_state:
+        selector: "select[name='propState']"        # CAPTURE NEEDED
+        type: select
+
+      # Sum Insured
+      sum_insured_building:
+        selector: "input[name='siBuilding']"        # CAPTURE NEEDED
+        type: number
+        required: true
+      sum_insured_contents:
+        selector: "input[name='siContents']"        # CAPTURE NEEDED
+        type: number
+
+      # Risk Details
+      occupancy:
+        selector: "select[name='occupancy']"        # CAPTURE NEEDED
+        type: select
+        required: true
+      occupancy_class:
+        selector: "select[name='occupancyClass']"   # CAPTURE NEEDED
+        type: select
+      construction_type:
+        selector: "select[name='constructionType']" # CAPTURE NEEDED
+        type: select
+      year_built:
+        selector: "input[name='yearBuilt']"         # CAPTURE NEEDED
+        type: number
+      number_of_floors:
+        selector: "input[name='numFloors']"         # CAPTURE NEEDED
+        type: number
+      building_area:
+        selector: "input[name='buildingArea']"      # CAPTURE NEEDED
+        type: number
+
+      # Coverage Period
+      coverage_start:
+        selector: "input[name='covStart']"          # CAPTURE NEEDED
+        type: date
+        required: true
+      coverage_end:
+        selector: "input[name='covEnd']"            # CAPTURE NEEDED
+        type: date
+        required: true
+
+      # Building Details
+      building_type:
+        selector: "select[name='buildingType']"     # CAPTURE NEEDED
+        type: select
+      roof_type:
+        selector: "select[name='roofType']"         # CAPTURE NEEDED
+        type: select
+      security_features:
+        selector: "input[name='securityFeatures']"  # CAPTURE NEEDED
+        type: text
+
+    # ── Actions ──
+    actions:
+      calculate:
+        selector: "button:has-text('Calculate')"
+        wait_after_ms: 3000
+      reset:
+        selector: "button:has-text('Reset')"
+      save_draft:
+        selector: "button:has-text('Save Draft')"
+
+    # ── Output / Result Selectors ──
+    outputs:
+      premium:
+        selector: ".quoted-premium"
+        type: text
+      premium_amount:
+        selector: ".premium-amount"                 # CAPTURE NEEDED
+        type: number
+      premium_breakdown:
+        selector: ".premium-breakdown"              # CAPTURE NEEDED
+        type: text
+      error_message:
+        selector: ".validation-error"
+        type: text
+
+    # ── Read-Only Safety ──
+    # These buttons MUST NEVER be clicked by the system
+    read_only:
+      issue_button: "button:has-text('Issue Policy')"
+      submit_button: "button:has-text('Submit')"
+      confirm_button: "button:has-text('Confirm')"
+      pay_button: "button:has-text('Pay')"
+
+# ── Navigation Routes (Phase 4.1) ──
+navigation:
+  quote.new:
+    description: "Navigate to new quote form"
+    steps:
+      - action: click
+        selector: quotation.nav_link
+      - action: wait
+        selector: quotation.product_select.selector
+        timeout: 5
+    fallback_steps:
+      - action: navigate
+        url: /geglink/Quotation.html
+
+  policy.search:
+    description: "Navigate to policy search"
+    url: /geglink/PolicyInquiry.html
+
+  dashboard:
+    description: "Return to dashboard"
+    url: /geglink/
+
+# ── Fill Schemas (Phase 4.2) ──
+# Each section groups related form fields.
+# Field types: text, textarea, select, radio, checkbox, date, lookup, upload, hidden, readonly
+schemas:
+  customer:
+    customer_name:
+      selector: "input[name='customerName']"
+      type: text
+      required: true
+      verify: true
+    customer_ic:
+      selector: "input[name='customerIC']"
+      type: text
+    gender:
+      selector: "input[name='gender']"
+      type: radio
+      transform: gender
+    dob:
+      selector: "input[name='dob']"
+      type: date
+      format: "%d/%m/%Y"
+    email:
+      selector: "input[name='emailAddr']"
+      type: text
+    phone:
+      selector: "input[name='contactNo']"
+      type: text
+    address:
+      selector: "textarea[name='corrAddr']"
+      type: textarea
+    state:
+      selector: "select[name='stateCd']"
+      type: select
+    nationality:
+      selector: "select[name='nationality']"
+      type: select
+    occupation:
+      selector: "input[name='occupation']"
+      type: lookup
+      options:
+        search_button: "button#searchOccupation"
+        search_input: "input#occupationSearch"
+        result_item: "tr.occupation-row:first-child"
+
+  risk:
+    property_address:
+      selector: "input[name='propAddr']"
+      type: text
+      required: true
+    property_postcode:
+      selector: "input[name='propPostcode']"
+      type: text
+    property_city:
+      selector: "input[name='propCity']"
+      type: text
+    property_state:
+      selector: "select[name='propState']"
+      type: select
+    sum_insured_building:
+      selector: "input[name='siBuilding']"
+      type: text
+      required: true
+      transform: uppercase
+    sum_insured_contents:
+      selector: "input[name='siContents']"
+      type: text
+    occupancy:
+      selector: "select[name='occupancy']"
+      type: select
+      required: true
+    occupancy_class:
+      selector: "select[name='occupancyClass']"
+      type: select
+    construction_type:
+      selector: "select[name='constructionType']"
+      type: select
+    year_built:
+      selector: "input[name='yearBuilt']"
+      type: text
+    number_of_floors:
+      selector: "input[name='numFloors']"
+      type: text
+    building_area:
+      selector: "input[name='buildingArea']"
+      type: text
+    coverage_start:
+      selector: "input[name='covStart']"
+      type: date
+      required: true
+      format: "%d/%m/%Y"
+    coverage_end:
+      selector: "input[name='covEnd']"
+      type: date
+      required: true
+      format: "%d/%m/%Y"
+    building_type:
+      selector: "select[name='buildingType']"
+      type: select
+    roof_type:
+      selector: "select[name='roofType']"
+      type: select
+    security_features:
+      selector: "input[name='securityFeatures']"
+      type: text
+
+  coverage:
+    basic_cover:
+      selector: "input[name='basicCover']"
+      type: checkbox
+    additional_cover:
+      selector: "input[name='addCover']"
+      type: checkbox
+    excess:
+      selector: "select[name='excess']"
+      type: select
+
+# ── Value Transformers (Phase 4.2) ──
+transformers:
+  gender:
+    MALE: M
+    FEMALE: F
+  uppercase: builtin
