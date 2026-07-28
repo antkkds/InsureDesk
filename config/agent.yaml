@@ -1,0 +1,35 @@
+# InsureDesk Agent Configuration
+# This file is generated on first install and can be customized per agent.
+
+agent:
+  name: "Default Agent"
+  version: "1.0.0"
+  data_dir: "%USERPROFILE%\\.insuredesk"
+
+network:
+  bridge_url: "http://localhost:8000"
+  api_version: "v1"
+  timeout_seconds: 30
+
+browser:
+  # Options: playwright, cdp
+  driver: "playwright"
+  # CDP port for external Chrome (only used if driver is "cdp")
+  cdp_port: 9230
+  headless: false
+  slow_mo_ms: 50
+
+logging:
+  level: "INFO"
+  file: "logs/insuredesk.log"
+  max_size_mb: 10
+  backup_count: 3
+
+portals:
+  profiles_dir: "profiles"
+  override_dir: "config/profiles_override"
+
+audit:
+  enabled: true
+  storage: "data/audit.json"
+  retention_days: 90
