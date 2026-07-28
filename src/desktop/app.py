@@ -1848,24 +1848,28 @@ class CredentialDialog(QDialog):
     def __init__(self, parent=None, portal_key="", portal_name="", edit_mode=False):
         super().__init__(parent)
         self.setWindowTitle(f"{'Edit' if edit_mode else 'Add'} Credentials — {portal_name or portal_key}")
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(420)
+        self.setMinimumHeight(320)
 
-        layout = QFormLayout(self)
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(8)
+
+        form = QFormLayout()
 
         # Account name (hidden for single-account mode)
         self.account_input = QLineEdit("default")
-        layout.addRow("Account Name:", self.account_input)
+        form.addRow("Account Name:", self.account_input)
 
         # Username
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("e.g. agent01@greateasternlife.com")
-        layout.addRow("Username / Email:", self.username_input)
+        form.addRow("Username / Email:", self.username_input)
 
         # Password
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.Password)
         self.password_input.setPlaceholderText("Portal login password")
-        layout.addRow("Password:", self.password_input)
+        form.addRow("Password:", self.password_input)
 
         # Show password toggle
         show_pw = QCheckBox("Show password")
@@ -1874,22 +1878,37 @@ class CredentialDialog(QDialog):
                 QLineEdit.Normal if checked else QLineEdit.Password
             )
         )
-        layout.addRow(show_pw)
+        form.addRow(show_pw)
+
+        main_layout.addLayout(form)
+
+        # Push everything below to the bottom
+        main_layout.addStretch()
 
         # Note
         note = QLabel(
             "🔒 Credentials will be encrypted before storage.\n"
             "The master key is stored in your OS secret store."
         )
-        note.setStyleSheet("color: #888; font-size: 10px; padding-top: 8px;")
+        note.setStyleSheet("color: #666; font-size: 10px; padding: 4px 0;")
         note.setWordWrap(True)
-        layout.addRow(note)
+        main_layout.addWidget(note)
 
         # Buttons
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        ok_btn = buttons.button(QDialogButtonBox.Ok)
+        ok_btn.setText("Save Credentials")
+        ok_btn.setStyleSheet(
+            "QPushButton { background: #1976D2; color: white; font-weight: bold; "
+            "padding: 8px 24px; border-radius: 4px; border: none; }"
+            "QPushButton:hover { background: #1565C0; }"
+        )
+        cancel_btn = buttons.button(QDialogButtonBox.Cancel)
+        cancel_btn.setText("Cancel")
+        cancel_btn.setStyleSheet("padding: 8px 24px;")
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addRow(buttons)
+        main_layout.addWidget(buttons)
 
     def get_data(self) -> dict:
         return {

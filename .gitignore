@@ -17,12 +17,21 @@ env/
 .DS_Store
 Thumbs.db
 
-# Hermes / debug
+# Hermes / debug / scratch
 .hermes_temp/
+_*.ps1
 _*.py
-*.ps1
+_*.json
 
-# Local state
+# Local state / DB
 *.local.yaml
 credentials.yaml
 *.log
+*.db
+
+# Local dev scripts
+run_bridge.py
+capture_mode.py
+
+# Generated
+src/bridge/

@@ -301,15 +301,165 @@ class PortalAdapter(ABC):
             return True
         return False
 
+    # ── Sprint 5.1: Generic Operations ──
+
+    async def execute_action(self, action_type: str,
+                              params: Optional[Dict[str, Any]] = None) -> Any:
+        """Execute a named action with params.
+
+        Dispatches to the appropriate domain method.
+        Supported actions: search_policy, get_policy_details, submit_claim,
+        renew_policy, upload_document, navigate, login, logout, health_check,
+        extract_data, recover_session.
+
+        Args:
+            action_type: Name of the action to execute.
+            params: Action-specific parameters.
+
+        Returns:
+            Action result (type depends on action).
+        """
+        params = params or {}
+        dispatch = {
+            "search_policy": lambda: self.search_policy(
+                params.get("policy_no", "")
+            ),
+            "get_policy_details": lambda: self.get_policy_details(),
+            "submit_claim": lambda: self.submit_claim(
+                params.get("claim_data", {})
+            ),
+            "renew_policy": lambda: self.renew_policy(),
+            "upload_document": lambda: self.upload_document(
+                params.get("file_path", ""),
+                params.get("doc_type", ""),
+            ),
+            "navigate": lambda: self.navigate(
+                params.get("route_name", "")
+            ),
+            "login": lambda: self.login(
+                PortalCredentials(
+                    username=params.get("username", ""),
+                    password=params.get("password", ""),
+                )
+            ),
+            "logout": lambda: self.logout(),
+            "health_check": lambda: self.health_check(),
+            "extract_data": lambda: self.extract_data(
+                params.get("data_type", "policy_details")
+            ),
+            "recover_session": lambda: self.recover_session(),
+        }
+        handler = dispatch.get(action_type)
+        if handler is None:
+            raise ValueError(
+                f"Unknown action: {action_type}. "
+                f"Supported: {', '.join(sorted(dispatch.keys()))}"
+            )
+        return await handler()
+
+    async def extract_data(self, data_type: str = "policy_details") -> Dict[str, Any]:
+        """Extract structured data from the current portal page.
+
+        Args:
+            data_type: Type of data to extract. Supported:
+                - 'policy_details': Extract policy details from detail page.
+                - 'search_results': Extract policy search results.
+                - 'claim_status': Extract current claim status.
+                - 'dashboard': Extract dashboard summary data.
+
+        Returns:
+            Dict with extracted data.
+        """
+        if not await self._ensure_logged_in():
+            return {"error": "not_logged_in"}
+
+        if data_type == "policy_details":
+            return await self.get_policy_details()
+        elif data_type == "claim_status":
+            status_sel = self.get_sel("claims", "claim_status")
+            status = await self.form.get_text(status_sel) if status_sel else "unknown"
+            return {"claim_status": status}
+        elif data_type == "dashboard":
+            welcome_sel = self.get_sel("dashboard", "welcome_message")
+            profile_sel = self.get_sel("dashboard", "user_profile")
+            return {
+                "welcome": await self.form.get_text(welcome_sel) if welcome_sel else "",
+                "profile": await self.form.get_text(profile_sel) if profile_sel else "",
+            }
+        elif data_type == "search_results":
+            results_sel = self.get_sel("policy_search", "search_results")
+            if not results_sel:
+                return {"results": []}
+            rows = await self.form.get_elements(results_sel)
+            return {"results": rows or []}
+        else:
+            raise ValueError(f"Unknown data_type: {data_type}")
+
+    async def recover_session(self) -> bool:
+        """Attempt to recover an expired or broken session.
+
+        Tries:
+        1. Restore saved session cookies
+        2. Navigate to dashboard to verify
+        3. If login page detected, attempt re-login with saved credentials
+        4. If no credentials, return False for manual intervention
+
+        Returns:
+            True if session is valid after recovery.
+        """
+        # Step 1: Try restoring saved session
+        if await self._restore_session():
+            self._logged_in = True
+            return True
+
+        # Step 2: Try navigating to start URL
+        if not self._engine:
+            return False
+        ok = await self._engine.navigate(self.start_url)
+        if not ok:
+            return False
+        await self._engine.wait_for_navigation(timeout=10000)
+
+        # Step 3: Check if already logged in
+        if await self._check_login_success():
+            self._logged_in = True
+            return True
+
+        # Step 4: Check if login page is showing
+        username_sel = self.get_sel("login", "username")
+        if username_sel and await self._engine.is_visible(username_sel):
+            return False  # Need credentials — can't auto-recover
+
+        return False
+
     async def check_health(self) -> Dict[str, Any]:
         """Check if portal is accessible and logged in."""
+        engine_ok = False
+        if self._engine:
+            try:
+                engine_ok = await self._engine.is_connected()
+            except Exception:
+                engine_ok = False
+
+        session_ok = False
+        if self._logged_in:
+            session_ok = True
+        elif self._engine:
+            # Check if we're on a valid page
+            try:
+                session_ok = await self._check_login_success()
+            except Exception:
+                session_ok = False
+
         return {
             "adapter": self.adapter_name,
             "portal": self.portal_name,
-            "logged_in": self._logged_in,
+            "logged_in": session_ok,
+            "engine_connected": engine_ok,
             "engine": self._engine.name if self._engine else "none",
             "has_mapping": self.mapping is not None,
             "start_url": self.start_url,
+            "healthy": engine_ok or not self._engine,  # healthy if no engine needed or engine OK
         }
 
     # ── Internal ──

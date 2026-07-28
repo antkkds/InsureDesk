@@ -20,6 +20,7 @@ from src.portal.profile.validator import ProfileValidator
 from src.portal.profile.analyzer import ProfileAnalyzer
 from src.portal.profile.comparator import ProfileComparator
 from src.portal.profile.upgrader import ProfileUpgrader
+from src.portal.profile.versioning import VersionManager
 from src.portal.profile.exceptions import ProfileNotFoundError
 
 logger = logging.getLogger("insuredesk.profile.registry")
@@ -87,6 +88,7 @@ class ProfileManager:
         comparator: Optional[ProfileComparator] = None,
         upgrader: Optional[ProfileUpgrader] = None,
         registry: Optional[ProfileRegistry] = None,
+        versioning: Optional[VersionManager] = None,
     ):
         self._loader = loader or ProfileLoader()
         self._validator = validator or ProfileValidator()
@@ -94,6 +96,7 @@ class ProfileManager:
         self._comparator = comparator or ProfileComparator()
         self._upgrader = upgrader or ProfileUpgrader()
         self._registry = registry or ProfileRegistry()
+        self._versioning = versioning or VersionManager()
 
     # ── Loading ──
 
@@ -172,3 +175,71 @@ class ProfileManager:
 
     def list_all(self) -> List[PortalProfile]:
         return self._registry.list_all()
+
+    # ── Sprint 5.4: Version Management ──
+
+    def create_version(self, profile_id: str,
+                        description: str = "") -> Dict[str, Any]:
+        """Create a version snapshot of a profile."""
+        profile = self._registry.get_or_raise(profile_id)
+        return self._versioning.create_version(profile, description)
+
+    def list_versions(self, profile_id: str) -> List[Dict[str, Any]]:
+        """List all versions for a profile."""
+        return self._versioning.list_versions(profile_id)
+
+    def rollback(self, profile_id: str,
+                  version_id: str) -> PortalProfile:
+        """Rollback a profile to a previous version."""
+        restored = self._versioning.rollback(profile_id, version_id)
+        self._registry.register(restored)
+        # Log the rollback as a migration
+        self._versioning.log_migration(
+            profile_id, "current", version_id,
+            f"Rolled back to {version_id}"
+        )
+        return restored
+
+    def compare_versions(self, profile_id: str,
+                          version_a: str,
+                          version_b: str) -> Dict[str, Any]:
+        """Compare two versions for differences."""
+        return self._versioning.compare_versions(
+            profile_id, version_a, version_b
+        )
+
+    def activate(self, profile_id: str,
+                  version_id: Optional[str] = None) -> None:
+        """Activate a profile (optionally pin a version)."""
+        self._versioning.activate(profile_id, version_id)
+
+    def deactivate(self, profile_id: str) -> None:
+        """Deactivate a profile."""
+        self._versioning.deactivate(profile_id)
+
+    def is_active(self, profile_id: str) -> bool:
+        """Check if profile is active."""
+        return self._versioning.is_active(profile_id)
+
+    def get_active_version(self, profile_id: str) -> Optional[str]:
+        """Get the active pinned version."""
+        return self._versioning.get_active_version(profile_id)
+
+    # ── Sprint 5.4: Migration History ──
+
+    def log_migration(self, profile_id: str, from_version: str,
+                       to_version: str, description: str) -> Dict[str, Any]:
+        """Record a migration event."""
+        return self._versioning.log_migration(
+            profile_id, from_version, to_version, description
+        )
+
+    def get_migration_history(self, profile_id: str) -> List[Dict[str, Any]]:
+        """Get migration history for a profile."""
+        return self._versioning.get_migration_history(profile_id)
+
+    # ── Sprint 5.4: Health Monitoring ──
+
+    def monitor_all(self) -> Dict[str, Any]:
+        """Monitor health across all registered profiles."""
+        return self._versioning.monitor_all(self._registry.list_all())
