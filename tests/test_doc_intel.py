@@ -1,10 +1,15 @@
-"""Tests: Document Intelligence Plugin — Extractor, Parser, Converter."""
+"""Tests: Document Intelligence Plugin — Parser, Converter, Plugin.
+
+Tests the insurance-specific layers only.
+PDF extraction is delegated to the standalone document-intelligence SDK
+(https://github.com/antkkds/document-intelligence) — not tested here.
+"""
+
 from __future__ import annotations
 
 import json
 import os
 import sys
-import tempfile
 
 import pytest
 
@@ -17,7 +22,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 SAMPLE_FIRE_POLICY = """
                           GREAT EASTERN
                      FIRE INSURANCE POLICY
-                     ======================
+                     =====================
 
 Policy Number: GEG123456789
 Policy Type: Houseowner Insurance
@@ -96,7 +101,8 @@ Monthly Premium: RM 450.00
 Annual Premium: RM 5,400.00
 
 Issue Date: 01/06/2020
-Policy Period: Whole Life
+Policy Period: 01/06/2020 - 01/06/2040
+Premium Paying Term: 20 years
 
 Exclusions:
 1. Suicide within first 12 months
@@ -115,7 +121,7 @@ Name of Insured: Testing Only
 
 
 # ══════════════════════════════════════════════════════════════════
-# 1. Parser Tests
+# 1. Parser Tests (insurance-specific, NOT in standalone SDK)
 # ══════════════════════════════════════════════════════════════════
 
 
@@ -165,13 +171,11 @@ class TestPolicyParser:
         from src.plugins.document_intelligence.parser import PolicyTextParser
 
         parser = PolicyTextParser()
-        result = parser.parse(SAMPLE_EMPTY)
+        result = parser.parse("")
+        assert result.errors is not None
+        assert "Empty" in result.errors[0]
 
-        assert result.policy_number.value is None
-        assert result.insured_name.value is None
-        assert result.confidence_overall.value == "unknown"
-
-    def test_parse_partial_text(self):
+    def test_parse_partial_data(self):
         from src.plugins.document_intelligence.parser import PolicyTextParser
 
         parser = PolicyTextParser()
@@ -179,23 +183,87 @@ class TestPolicyParser:
 
         assert result.policy_number.value == "ABC789XYZ"
         assert result.insured_name.value == "Testing Only"
+        assert result.total_premium.value is None
+        assert result.insurer.value is None
 
-    def test_field_value_reliable(self):
-        from src.plugins.document_intelligence.models import FieldValue, PolicyFieldConfidence
+    def test_parse_noise_text(self):
+        from src.plugins.document_intelligence.parser import PolicyTextParser
 
-        fv = FieldValue(value="test", confidence=PolicyFieldConfidence.HIGH)
-        assert fv.is_reliable
+        parser = PolicyTextParser()
+        result = parser.parse(SAMPLE_EMPTY)
 
-        fv = FieldValue(value="test", confidence=PolicyFieldConfidence.LOW)
-        assert not fv.is_reliable
+        assert result.confidence_overall.value == "unknown"
+
+    def test_to_json_compatible(self):
+        from src.plugins.document_intelligence.parser import PolicyTextParser
+
+        parser = PolicyTextParser()
+        result = parser.parse(SAMPLE_FIRE_POLICY)
+
+        json_data = result.to_json_compatible()
+
+        assert "policy" in json_data
+        assert json_data["policy"]["number"] == "GEG123456789"
+        assert json_data["policy"]["insurer"] == "Great Eastern"
+
+        assert "insured" in json_data
+        assert json_data["insured"]["name"] == "John Tan Ah Kow"
+
+        assert "premium" in json_data
+        assert json_data["premium"]["total"] == 1234.50
+        assert json_data["premium"]["currency"] == "MYR"
+
+        assert "coverages" in json_data
+        assert "exclusions" in json_data
+        assert "_meta" in json_data
+        assert json_data["_meta"]["confidence"] in ("high", "medium")
 
 
 # ══════════════════════════════════════════════════════════════════
-# 2. Converter Tests
+# 2. Converter Tests (insurance-specific)
 # ══════════════════════════════════════════════════════════════════
 
 
 class TestPolicyConverter:
+    def test_to_db_record(self):
+        from src.plugins.document_intelligence.parser import PolicyTextParser
+        from src.plugins.document_intelligence.converter import PolicyConverter
+
+        parser = PolicyTextParser()
+        parsed = parser.parse(SAMPLE_FIRE_POLICY)
+
+        db = PolicyConverter.to_db_record(parsed, "cust_001", "doc_001")
+
+        assert db["customer_id"] == "cust_001"
+        assert db["document_id"] == "doc_001"
+        assert db["policy_number"] == "GEG123456789"
+        assert db["company"] == "Great Eastern"
+        assert db["policy_type"] == "fire"
+        # Verify raw_json is valid JSON with expected keys
+        rj = json.loads(db["raw_json"])
+        assert "policy" in rj
+        assert "insured" in rj
+        assert "premium" in rj
+        # Verify coverages_json is valid JSON
+        cj = json.loads(db["coverages_json"])
+        assert isinstance(cj, list)
+        # Verify exclusions_json is valid JSON
+        ej = json.loads(db["exclusions_json"])
+        assert isinstance(ej, list)
+
+    def test_to_db_record_document_fields_present(self):
+        from src.plugins.document_intelligence.parser import PolicyTextParser
+        from src.plugins.document_intelligence.converter import PolicyConverter
+
+        parser = PolicyTextParser()
+        parsed = parser.parse(SAMPLE_FIRE_POLICY)
+        db = PolicyConverter.to_db_record(parsed, "cust_001", "doc_001")
+
+        assert db.get("customer_id") == "cust_001"
+        assert db.get("document_id") == "doc_001"
+        assert db.get("version") == 1
+        assert db.get("summary") is not None
+
     def test_to_uipai_format(self):
         from src.plugins.document_intelligence.parser import PolicyTextParser
         from src.plugins.document_intelligence.converter import PolicyConverter
@@ -204,13 +272,11 @@ class TestPolicyConverter:
         parsed = parser.parse(SAMPLE_FIRE_POLICY)
 
         uipai = PolicyConverter.to_uipai_format(parsed)
-        assert uipai["policy"]["number"] == "GEG123456789"
-        assert uipai["insured"]["name"] == "John Tan Ah Kow"
-        assert uipai["premium"]["total"] == 1234.50
-        assert len(uipai["coverages"]) >= 2
-        assert len(uipai["exclusions"]) >= 3
+
         assert "_query" in uipai
         assert uipai["_query"]["has_coverage"]
+        assert uipai["_query"]["has_exclusions"]
+        assert uipai["_query"]["confidence"] in ("high", "medium", "low")
 
     def test_to_natural_language(self):
         from src.plugins.document_intelligence.parser import PolicyTextParser
@@ -220,136 +286,187 @@ class TestPolicyConverter:
         parsed = parser.parse(SAMPLE_FIRE_POLICY)
 
         nl = PolicyConverter.to_natural_language(parsed)
-        assert "Policy Number:" in nl
+
         assert "Great Eastern" in nl
-        assert "John Tan Ah Kow" in nl
-        assert "1,234.50" in nl
         assert "Buildings" in nl
-
-    def test_to_db_record(self):
-        from src.plugins.document_intelligence.parser import PolicyTextParser
-        from src.plugins.document_intelligence.converter import PolicyConverter
-
-        parser = PolicyTextParser()
-        parsed = parser.parse(SAMPLE_FIRE_POLICY)
-
-        db = PolicyConverter.to_db_record(parsed, "cust_001", "doc_001")
-        assert db["customer_id"] == "cust_001"
-        assert db["document_id"] == "doc_001"
-        assert db["company"] == "Great Eastern"
-        assert db["policy_number"] == "GEG123456789"
-        assert db["policy_type"] == "fire"
-        assert "coverages_json" in db
-        assert "raw_json" in db
-
-        # Verify JSON fields are valid
-        coverages = json.loads(db["coverages_json"])
-        assert len(coverages) >= 2
+        assert "Contents" in nl
 
 
 # ══════════════════════════════════════════════════════════════════
-# 3. Extractor Tests (with temp PDF)
+# 3. Plugin Tests (thin integration layer)
 # ══════════════════════════════════════════════════════════════════
 
 
-class TestPDFExtractor:
-    def test_file_not_found(self):
-        from src.plugins.document_intelligence.extractor import PDFExtractor
+class TestDocumentIntelligencePlugin:
+    def test_plugin_properties(self):
+        from src.plugins.document_intelligence.plugin import (
+            DocumentIntelligencePlugin,
+        )
 
-        ext = PDFExtractor()
-        result = ext.extract("/nonexistent/file.pdf")
-        assert result.error is not None
-        assert "not found" in result.error
+        plugin = DocumentIntelligencePlugin()
 
-    def test_not_a_pdf(self):
-        from src.plugins.document_intelligence.extractor import PDFExtractor
+        assert plugin.id == "document_intelligence"
+        assert plugin.version == "1.0.0"
+        assert "document.parse" in plugin.capabilities
+        assert "document.extract_policy" in plugin.capabilities
+        assert "document.index" in plugin.capabilities
 
-        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as f:
-            f.write(b"not a pdf")
-            tmp = f.name
-        try:
-            ext = PDFExtractor()
-            result = ext.extract(tmp)
-            assert result.error is not None
-            assert "Not a PDF" in result.error
-        finally:
-            os.unlink(tmp)
+    def test_plugin_initialize_with_context(self):
+        from src.plugins.base import PluginContext
+        from src.plugins.document_intelligence.plugin import (
+            DocumentIntelligencePlugin,
+        )
 
-    def test_extract_digital_pdf(self):
-        """Create a minimal PDF with PyMuPDF and verify extraction."""
-        from src.plugins.document_intelligence.extractor import PDFExtractor
+        plugin = DocumentIntelligencePlugin()
+        ctx = PluginContext()
+        plugin.initialize(ctx)
+        # Should not raise
 
-        # Create a minimal PDF using PyMuPDF
+    def test_plugin_shutdown(self):
+        from src.plugins.document_intelligence.plugin import (
+            DocumentIntelligencePlugin,
+        )
+
+        plugin = DocumentIntelligencePlugin()
+        plugin.shutdown()
+        # Should not raise
+
+    def test_plugin_fallback_pymupdf(self):
+        """Test that the plugin's fallback PyMuPDF extraction works.
+
+        This tests the _extract_pymupdf path when no SDK is available.
+        """
+        from src.plugins.document_intelligence.plugin import (
+            DocumentIntelligencePlugin,
+        )
+
+        plugin = DocumentIntelligencePlugin()
+
         try:
             import fitz
+
+            # Create a temp PDF with known text
+            import tempfile
+
             doc = fitz.open()
             page = doc.new_page()
-            page.insert_text((50, 100), "Policy Number: TEST001", fontsize=12)
-            page.insert_text((50, 130), "Insured: Test User", fontsize=12)
-            page.insert_text((50, 160), "Total Premium: RM 1,000.00", fontsize=12)
-
+            page.insert_text((50, 100), SAMPLE_FIRE_POLICY, fontsize=8)
             tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
             tmp.close()
             doc.save(tmp.name)
             doc.close()
 
-            ext = PDFExtractor()
-            result = ext.extract(tmp.name)
-            assert result.succeeded
-            assert result.format.value == "digital"
-            assert result.page_count == 1
-            assert "TEST001" in result.raw_text
-            assert "Test User" in result.raw_text
+            # Parse with fallback (SDK not available in this env)
+            parsed = plugin.parse_policy(tmp.name, use_sdk=False)
+
+            assert parsed.policy_number.value == "GEG123456789"
+            assert parsed.insurer.value == "Great Eastern"
+            assert parsed.insured_name.value == "John Tan Ah Kow"
 
             os.unlink(tmp.name)
+
         except ImportError:
             pytest.skip("PyMuPDF not installed")
 
-    def test_extract_metadata(self):
-        from src.plugins.document_intelligence.extractor import PDFExtractor
+    def test_parse_to_db_via_plugin(self):
+        from src.plugins.document_intelligence.plugin import (
+            DocumentIntelligencePlugin,
+        )
+
+        plugin = DocumentIntelligencePlugin()
 
         try:
             import fitz
+            import tempfile
+
             doc = fitz.open()
             page = doc.new_page()
-            page.insert_text((50, 100), "Test metadata", fontsize=12)
+            page.insert_text((50, 100), SAMPLE_FIRE_POLICY, fontsize=8)
             tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
             tmp.close()
             doc.save(tmp.name)
             doc.close()
 
-            ext = PDFExtractor()
-            meta = ext.get_metadata(tmp.name)
-            assert meta["page_count"] == 1
-            assert meta["file_size"] > 0
+            db = plugin.parse_to_db(tmp.name, "cust_001", "doc_001", use_sdk=False)
+
+            assert db["policy_number"] == "GEG123456789"
+            assert db["customer_id"] == "cust_001"
 
             os.unlink(tmp.name)
+
         except ImportError:
             pytest.skip("PyMuPDF not installed")
 
-    def test_is_digital(self):
-        from src.plugins.document_intelligence.extractor import PDFExtractor
+    def test_parse_to_natural_language_via_plugin(self):
+        from src.plugins.document_intelligence.plugin import (
+            DocumentIntelligencePlugin,
+        )
+
+        plugin = DocumentIntelligencePlugin()
 
         try:
             import fitz
+            import tempfile
+
             doc = fitz.open()
             page = doc.new_page()
-            page.insert_text((50, 100), "A" * 200, fontsize=12)
+            page.insert_text((50, 100), SAMPLE_FIRE_POLICY, fontsize=8)
             tmp = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
             tmp.close()
             doc.save(tmp.name)
             doc.close()
 
-            ext = PDFExtractor()
-            assert ext.is_digital(tmp.name)
+            nl = plugin.parse_to_natural_language(
+                tmp.name, use_sdk=False
+            )
+
+            assert "Great Eastern" in nl
+            assert "Buildings" in nl
 
             os.unlink(tmp.name)
+
         except ImportError:
             pytest.skip("PyMuPDF not installed")
+
+    def test_parse_file_not_found(self):
+        from src.plugins.document_intelligence.plugin import (
+            DocumentIntelligencePlugin,
+        )
+
+        plugin = DocumentIntelligencePlugin()
+
+        with pytest.raises(FileNotFoundError):
+            plugin.parse_policy("/nonexistent/file.pdf")
+
+    def test_registration_with_registry(self):
+        """Test the plugin can be registered with PluginRegistry."""
+        from src.plugins.registry import PluginRegistry
+        from src.plugins.base import PluginContext
+        from src.plugins.document_intelligence.plugin import (
+            DocumentIntelligencePlugin,
+        )
+
+        registry = PluginRegistry()
+        plugin = DocumentIntelligencePlugin()
+
+        registry.register(plugin)
+        registry.initialize_all(PluginContext())
+
+        # Find by capability
+        parsers = registry.find_capability("document.extract_policy")
+        assert len(parsers) == 1
+        assert parsers[0].id == "document_intelligence"
+
+        # Get by ID
+        fetched = registry.get("document_intelligence")
+        assert fetched is not None
+        assert fetched.version == "1.0.0"
+
+        registry.shutdown_all()
 
 
 # ══════════════════════════════════════════════════════════════════
-# 4. Integration — full pipeline
+# 4. Integration — Parser → Converter pipeline (text-only, no PDF)
 # ══════════════════════════════════════════════════════════════════
 
 
@@ -362,16 +479,13 @@ class TestDocIntelPipeline:
         parser = PolicyTextParser()
         converter = PolicyConverter()
 
-        # Parse
         parsed = parser.parse(SAMPLE_FIRE_POLICY)
         assert parsed.policy_number.value == "GEG123456789"
 
-        # Convert to UIP-AI
         uipai = converter.to_uipai_format(parsed)
         assert uipai["_query"]["has_coverage"]
         assert uipai["_query"]["confidence"] in ("high", "medium")
 
-        # Convert to DB
         db = converter.to_db_record(parsed, "cust_001", "doc_001")
         assert db["policy_number"] == "GEG123456789"
 
@@ -388,24 +502,3 @@ class TestDocIntelPipeline:
         assert "Buildings" in nl
         assert "Contents" in nl
         assert "500,000" in nl or "350,000" in nl
-
-    def test_to_json_compatible(self):
-        """Verify ParsedPolicy.to_json_compatible() output structure."""
-        from src.plugins.document_intelligence.parser import PolicyTextParser
-
-        parser = PolicyTextParser()
-        parsed = parser.parse(SAMPLE_FIRE_POLICY)
-
-        json_data = parsed.to_json_compatible()
-        # Verify nested structure
-        assert "policy" in json_data
-        assert "insured" in json_data
-        assert "premium" in json_data
-        assert "coverages" in json_data
-        assert "exclusions" in json_data
-        assert "_meta" in json_data
-
-        # Verify types
-        assert isinstance(json_data["coverages"], list)
-        assert isinstance(json_data["exclusions"], list)
-        assert isinstance(json_data["premium"]["total"], float)

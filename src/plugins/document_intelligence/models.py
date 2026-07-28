@@ -1,8 +1,13 @@
-"""InsureDesk — Document Intelligence: Data Models.
+"""InsureDesk — Document Intelligence: Insurance Domain Models.
 
-Core data structures for PDF extraction, policy parsing,
-and structured policy data that UIP-AI can query.
+Insurance-specific data structures for parsed policy data.
+The generic document model (Document, Section, Metadata) lives in
+the standalone document-intelligence SDK (pip installed from GitHub).
+
+Architecture:
+  document-intelligence SDK → Document (generic) → PolicyTextParser → ParsedPolicy (insurance)
 """
+
 from __future__ import annotations
 
 import uuid
@@ -10,25 +15,6 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
-
-
-class DocumentFormat(Enum):
-    """Type of PDF document detected."""
-
-    DIGITAL = "digital"  # Text-extractable PDF
-    SCANNED = "scanned"  # Image-based PDF (needs OCR)
-    UNKNOWN = "unknown"
-
-
-class ExtractionStatus(Enum):
-    """Status of an extraction job."""
-
-    PENDING = "pending"
-    EXTRACTING = "extracting"
-    EXTRACTED = "extracted"
-    PARSING = "parsing"
-    PARSED = "parsed"
-    FAILED = "failed"
 
 
 class PolicyFieldConfidence(Enum):
@@ -52,25 +38,6 @@ class FieldValue:
     @property
     def is_reliable(self) -> bool:
         return self.confidence in (PolicyFieldConfidence.HIGH, PolicyFieldConfidence.MEDIUM)
-
-
-@dataclass
-class ExtractionResult:
-    """Result of the PDF text extraction step."""
-
-    id: str = field(default_factory=lambda: f"ext_{uuid.uuid4().hex[:8]}")
-    file_path: str = ""
-    format: DocumentFormat = DocumentFormat.UNKNOWN
-    page_count: int = 0
-    raw_text: str = ""
-    pages: List[str] = field(default_factory=list)  # Text per page
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[str] = None
-    duration_ms: float = 0.0
-
-    @property
-    def succeeded(self) -> bool:
-        return self.error is None and len(self.raw_text) > 0
 
 
 @dataclass
@@ -98,7 +65,8 @@ class ParsedPolicy:
     """Fully parsed, structured policy data.
 
     This is the output of the Parser stage — text-agnostic.
-    The same structure works whether text came from PyMuPDF, OCR, or API.
+    The same structure works whether text came from document-intelligence SDK,
+    raw PyMuPDF, OCR, or any other source.
     """
 
     id: str = field(default_factory=lambda: f"pol_{uuid.uuid4().hex[:8]}")
@@ -144,7 +112,6 @@ class ParsedPolicy:
         """Convert to a JSON-compatible dict for PolicyParseRecord storage.
 
         This is the format UIP-AI will query against.
-        Nested structure as recommended by ChatGPT.
         """
         return {
             "policy": {
