@@ -23,6 +23,8 @@ from src.workflow.models import (
     QuoteStatus,
     WorkflowSession,
 )
+from src.audit import ExecutionAudit, default_audit
+from src.audit.models import AuditQuery, ApprovalDecision
 
 logger = logging.getLogger("insuredesk.workflow.quote")
 
@@ -36,6 +38,8 @@ class QuoteWorkflow:
         3. Validate quote result
         4. Review changes
         5. Return QuoteResponse
+
+    All steps are logged to the production audit trail.
     """
 
     def __init__(
@@ -44,11 +48,13 @@ class QuoteWorkflow:
         validation_engine: Optional[ValidationEngine] = None,
         review_engine: Optional[ReviewEngine] = None,
         approval_gate: Optional[ApprovalGate] = None,
+        audit_trail: Optional[ExecutionAudit] = None,
     ):
         self._executor = quote_executor or QuoteExecutor()
         self._validation = validation_engine
         self._review = review_engine
         self._approval = approval_gate or ApprovalGate()
+        self._audit = audit_trail or default_audit
 
     def execute(self, request: QuoteRequest) -> QuoteResponse:
         """Run the full quote workflow synchronously."""
@@ -69,6 +75,12 @@ class QuoteWorkflow:
         session.update_status(QuoteStatus.REQUEST_RECEIVED)
         start_time = time.monotonic()
 
+        # ── Audit: workflow started ──────────────────────────────
+        self._audit.log_workflow_start(
+            workflow_id=session.id,
+            portal_id=request.portal_id,
+        )
+
         # ── Step 1: Validate Input ──────────────────────────────
         session.add_step("validate_input")
         session.mark_step_running("validate_input")
@@ -78,6 +90,12 @@ class QuoteWorkflow:
             error = f"Missing required fields: {', '.join(missing)}"
             session.mark_step_failed("validate_input", error)
             session.update_status(QuoteStatus.FAILED)
+            self._audit.log_workflow_failed(
+                workflow_id=session.id,
+                portal_id=request.portal_id,
+                error=error,
+                step="validate_input",
+            )
             return QuoteResponse(
                 workflow_id=session.id,
                 portal_id=request.portal_id,
@@ -86,6 +104,12 @@ class QuoteWorkflow:
             )
 
         session.mark_step_completed("validate_input", {"valid": True})
+        self._audit.log_step(
+            workflow_id=session.id,
+            portal_id=request.portal_id,
+            step_name="validate_input",
+            status="success",
+        )
 
         # ── Step 2: Portal Login ────────────────────────────────
         session.add_step("portal_login")
@@ -97,10 +121,22 @@ class QuoteWorkflow:
             if not login_ok:
                 raise RuntimeError("Portal login failed — check credentials")
             session.mark_step_completed("portal_login", {"portal": request.portal_id})
+            self._audit.log_step(
+                workflow_id=session.id,
+                portal_id=request.portal_id,
+                step_name="portal_login",
+                status="success",
+            )
         except Exception as e:
             error = f"Portal login failed: {e}"
             session.mark_step_failed("portal_login", error)
             session.update_status(QuoteStatus.FAILED)
+            self._audit.log_workflow_failed(
+                workflow_id=session.id,
+                portal_id=request.portal_id,
+                error=error,
+                step="portal_login",
+            )
             return QuoteResponse(
                 workflow_id=session.id,
                 portal_id=request.portal_id,
@@ -116,10 +152,23 @@ class QuoteWorkflow:
         try:
             quote_result = await self._create_quote(request)
             session.mark_step_completed("create_quote", dict(quote_result or {}))
+            self._audit.log_step(
+                workflow_id=session.id,
+                portal_id=request.portal_id,
+                step_name="create_quote",
+                status="success",
+                details={"premium": quote_result.get("premium", 0)},
+            )
         except Exception as e:
             error = f"Quote creation failed: {e}"
             session.mark_step_failed("create_quote", error)
             session.update_status(QuoteStatus.FAILED)
+            self._audit.log_workflow_failed(
+                workflow_id=session.id,
+                portal_id=request.portal_id,
+                error=error,
+                step="create_quote",
+            )
             return QuoteResponse(
                 workflow_id=session.id,
                 portal_id=request.portal_id,
@@ -152,6 +201,13 @@ class QuoteWorkflow:
                     "validate_quote",
                     {"passed": validation_passed},
                 )
+                self._audit.log_validation(
+                    workflow_id=session.id,
+                    portal_id=request.portal_id,
+                    passed=validation_passed,
+                    errors=[e.message for e in validation_result.errors[:5]]
+                    if validation_result.errors else [],
+                )
             except Exception as e:
                 logger.warning(f"Validation skipped (non-fatal): {e}")
                 session.mark_step_completed("validate_quote", {"passed": True})
@@ -178,12 +234,24 @@ class QuoteWorkflow:
                 logger.warning(f"Review skipped (non-fatal): {e}")
 
         session.mark_step_completed("review", {"summary": review_summary})
+        self._audit.log_review(
+            workflow_id=session.id,
+            portal_id=request.portal_id,
+            summary=review_summary,
+        )
 
         # ── Step 6: Check Approval ──────────────────────────────
         needs_approval = self._approval.needs_approval("generate_quote")
 
         if needs_approval:
             session.update_status(QuoteStatus.APPROVAL_PENDING)
+            self._audit.log_step(
+                workflow_id=session.id,
+                portal_id=request.portal_id,
+                step_name="approval",
+                status="pending",
+                details={"reason": "Approval required for generate_quote"},
+            )
         else:
             session.update_status(QuoteStatus.COMPLETED)
 
@@ -199,6 +267,16 @@ class QuoteWorkflow:
             )
             breakdown = quote_result.get("premium_breakdown", {})
             summary_text = quote_result.get("coverage_summary", "")
+
+        # ── Audit: workflow completed ───────────────────────────
+        final_status = "approval_pending" if needs_approval else "completed"
+        self._audit.log_workflow_complete(
+            workflow_id=session.id,
+            portal_id=request.portal_id,
+            status=final_status,
+            total_duration_ms=elapsed,
+            premium=float(premium),
+        )
 
         return QuoteResponse(
             workflow_id=session.id,

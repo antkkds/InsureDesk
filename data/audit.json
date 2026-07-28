@@ -1,0 +1,885 @@
+{
+  "entries": [
+    {
+      "id": "audit_9bbb28cd",
+      "timestamp": "2026-07-29T00:09:18.098997",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_0322b867",
+      "execution_id": "",
+      "message": "Workflow started: wf_0322b867 for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:18.098987"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_60b29d9b",
+      "timestamp": "2026-07-29T00:09:18.103089",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_0322b867",
+      "execution_id": "",
+      "message": "Workflow failed at 'validate_input': Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building",
+      "details": {
+        "failed_step": "validate_input"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building"
+    },
+    {
+      "id": "audit_388aec6a",
+      "timestamp": "2026-07-29T00:09:18.109755",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_367c7642",
+      "execution_id": "",
+      "message": "Workflow started: wf_367c7642 for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:18.109745"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_3b958a9d",
+      "timestamp": "2026-07-29T00:09:18.113775",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_validate_input",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_367c7642",
+      "execution_id": "",
+      "message": "Step 'validate_input': success",
+      "details": {
+        "step": "validate_input",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_259d1a34",
+      "timestamp": "2026-07-29T00:09:18.411427",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_portal_login",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_367c7642",
+      "execution_id": "",
+      "message": "Step 'portal_login': success",
+      "details": {
+        "step": "portal_login",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_7552d9c9",
+      "timestamp": "2026-07-29T00:09:18.438388",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_367c7642",
+      "execution_id": "",
+      "message": "Workflow failed at 'create_quote': Quote creation failed: 'NoneType' object has no attribute 'engine'",
+      "details": {
+        "failed_step": "create_quote"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Quote creation failed: 'NoneType' object has no attribute 'engine'"
+    },
+    {
+      "id": "audit_b2ac2f52",
+      "timestamp": "2026-07-29T00:09:18.445549",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_f52ec176",
+      "execution_id": "",
+      "message": "Workflow started: wf_f52ec176 for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:18.445539"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_9fdebdf4",
+      "timestamp": "2026-07-29T00:09:18.449649",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_f52ec176",
+      "execution_id": "",
+      "message": "Workflow failed at 'validate_input': Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building",
+      "details": {
+        "failed_step": "validate_input"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building"
+    },
+    {
+      "id": "audit_958bf37e",
+      "timestamp": "2026-07-29T00:09:18.454491",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_25272284",
+      "execution_id": "",
+      "message": "Workflow started: wf_25272284 for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:18.454478"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_a1f5cf4a",
+      "timestamp": "2026-07-29T00:09:18.458652",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_validate_input",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_25272284",
+      "execution_id": "",
+      "message": "Step 'validate_input': success",
+      "details": {
+        "step": "validate_input",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_420be774",
+      "timestamp": "2026-07-29T00:09:18.486738",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_portal_login",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_25272284",
+      "execution_id": "",
+      "message": "Step 'portal_login': success",
+      "details": {
+        "step": "portal_login",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_42bb4cba",
+      "timestamp": "2026-07-29T00:09:18.513119",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_25272284",
+      "execution_id": "",
+      "message": "Workflow failed at 'create_quote': Quote creation failed: 'NoneType' object has no attribute 'engine'",
+      "details": {
+        "failed_step": "create_quote"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Quote creation failed: 'NoneType' object has no attribute 'engine'"
+    },
+    {
+      "id": "audit_2c98f225",
+      "timestamp": "2026-07-29T00:09:37.943590",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_498b69db",
+      "execution_id": "",
+      "message": "Workflow started: wf_498b69db for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:37.943579"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_2811068e",
+      "timestamp": "2026-07-29T00:09:37.947558",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_498b69db",
+      "execution_id": "",
+      "message": "Workflow failed at 'validate_input': Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building",
+      "details": {
+        "failed_step": "validate_input"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building"
+    },
+    {
+      "id": "audit_2c9b968d",
+      "timestamp": "2026-07-29T00:09:37.954919",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_f283170b",
+      "execution_id": "",
+      "message": "Workflow started: wf_f283170b for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:37.954909"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_1ee09b94",
+      "timestamp": "2026-07-29T00:09:37.958983",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_validate_input",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_f283170b",
+      "execution_id": "",
+      "message": "Step 'validate_input': success",
+      "details": {
+        "step": "validate_input",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_36caf780",
+      "timestamp": "2026-07-29T00:09:38.242126",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_portal_login",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_f283170b",
+      "execution_id": "",
+      "message": "Step 'portal_login': success",
+      "details": {
+        "step": "portal_login",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_7975b80c",
+      "timestamp": "2026-07-29T00:09:38.273617",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_f283170b",
+      "execution_id": "",
+      "message": "Workflow failed at 'create_quote': Quote creation failed: 'NoneType' object has no attribute 'engine'",
+      "details": {
+        "failed_step": "create_quote"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Quote creation failed: 'NoneType' object has no attribute 'engine'"
+    },
+    {
+      "id": "audit_a2809af5",
+      "timestamp": "2026-07-29T00:09:38.282985",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_17ed5fe6",
+      "execution_id": "",
+      "message": "Workflow started: wf_17ed5fe6 for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:38.282974"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_33590f55",
+      "timestamp": "2026-07-29T00:09:38.287857",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_17ed5fe6",
+      "execution_id": "",
+      "message": "Workflow failed at 'validate_input': Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building",
+      "details": {
+        "failed_step": "validate_input"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building"
+    },
+    {
+      "id": "audit_cf06f59d",
+      "timestamp": "2026-07-29T00:09:38.294548",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_5207a39f",
+      "execution_id": "",
+      "message": "Workflow started: wf_5207a39f for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:38.294538"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_033eb3f9",
+      "timestamp": "2026-07-29T00:09:38.299579",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_validate_input",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_5207a39f",
+      "execution_id": "",
+      "message": "Step 'validate_input': success",
+      "details": {
+        "step": "validate_input",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_4e99700d",
+      "timestamp": "2026-07-29T00:09:38.327493",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_portal_login",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_5207a39f",
+      "execution_id": "",
+      "message": "Step 'portal_login': success",
+      "details": {
+        "step": "portal_login",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_424f7644",
+      "timestamp": "2026-07-29T00:09:38.356233",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_5207a39f",
+      "execution_id": "",
+      "message": "Workflow failed at 'create_quote': Quote creation failed: 'NoneType' object has no attribute 'engine'",
+      "details": {
+        "failed_step": "create_quote"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Quote creation failed: 'NoneType' object has no attribute 'engine'"
+    },
+    {
+      "id": "audit_1ae7149c",
+      "timestamp": "2026-07-29T00:09:50.392293",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_ef596f7a",
+      "execution_id": "",
+      "message": "Workflow started: wf_ef596f7a for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:50.392284"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_518feb43",
+      "timestamp": "2026-07-29T00:09:50.396910",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_ef596f7a",
+      "execution_id": "",
+      "message": "Workflow failed at 'validate_input': Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building",
+      "details": {
+        "failed_step": "validate_input"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building"
+    },
+    {
+      "id": "audit_5cf56630",
+      "timestamp": "2026-07-29T00:09:50.403741",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_221e07db",
+      "execution_id": "",
+      "message": "Workflow started: wf_221e07db for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:50.403731"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_bd0d2bc2",
+      "timestamp": "2026-07-29T00:09:50.408505",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_validate_input",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_221e07db",
+      "execution_id": "",
+      "message": "Step 'validate_input': success",
+      "details": {
+        "step": "validate_input",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_d73894b4",
+      "timestamp": "2026-07-29T00:09:50.699404",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_portal_login",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_221e07db",
+      "execution_id": "",
+      "message": "Step 'portal_login': success",
+      "details": {
+        "step": "portal_login",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_2a62aa32",
+      "timestamp": "2026-07-29T00:09:50.728050",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_221e07db",
+      "execution_id": "",
+      "message": "Workflow failed at 'create_quote': Quote creation failed: 'NoneType' object has no attribute 'engine'",
+      "details": {
+        "failed_step": "create_quote"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Quote creation failed: 'NoneType' object has no attribute 'engine'"
+    },
+    {
+      "id": "audit_579d215f",
+      "timestamp": "2026-07-29T00:09:50.738772",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_51265d97",
+      "execution_id": "",
+      "message": "Workflow started: wf_51265d97 for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:50.738763"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_b84ae48f",
+      "timestamp": "2026-07-29T00:09:50.743909",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_51265d97",
+      "execution_id": "",
+      "message": "Workflow failed at 'validate_input': Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building",
+      "details": {
+        "failed_step": "validate_input"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building"
+    },
+    {
+      "id": "audit_5abb16ef",
+      "timestamp": "2026-07-29T00:09:50.749312",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_7a306259",
+      "execution_id": "",
+      "message": "Workflow started: wf_7a306259 for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:09:50.749302"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_68648fa0",
+      "timestamp": "2026-07-29T00:09:50.753984",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_validate_input",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_7a306259",
+      "execution_id": "",
+      "message": "Step 'validate_input': success",
+      "details": {
+        "step": "validate_input",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_84efa2b3",
+      "timestamp": "2026-07-29T00:09:50.782444",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_portal_login",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_7a306259",
+      "execution_id": "",
+      "message": "Step 'portal_login': success",
+      "details": {
+        "step": "portal_login",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_8a740fcf",
+      "timestamp": "2026-07-29T00:09:50.815002",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_7a306259",
+      "execution_id": "",
+      "message": "Workflow failed at 'create_quote': Quote creation failed: 'NoneType' object has no attribute 'engine'",
+      "details": {
+        "failed_step": "create_quote"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Quote creation failed: 'NoneType' object has no attribute 'engine'"
+    },
+    {
+      "id": "audit_9cdf4d3f",
+      "timestamp": "2026-07-29T00:11:19.530643",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_c9306605",
+      "execution_id": "",
+      "message": "Workflow started: wf_c9306605 for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:11:19.530595"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_7fbd36b5",
+      "timestamp": "2026-07-29T00:11:19.536703",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_c9306605",
+      "execution_id": "",
+      "message": "Workflow failed at 'validate_input': Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building",
+      "details": {
+        "failed_step": "validate_input"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building"
+    },
+    {
+      "id": "audit_c33e2422",
+      "timestamp": "2026-07-29T00:11:19.544263",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_bd871daa",
+      "execution_id": "",
+      "message": "Workflow started: wf_bd871daa for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:11:19.544253"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_5f42c0c3",
+      "timestamp": "2026-07-29T00:11:19.548856",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_validate_input",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_bd871daa",
+      "execution_id": "",
+      "message": "Step 'validate_input': success",
+      "details": {
+        "step": "validate_input",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_8552b6fb",
+      "timestamp": "2026-07-29T00:11:19.576888",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_portal_login",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_bd871daa",
+      "execution_id": "",
+      "message": "Step 'portal_login': success",
+      "details": {
+        "step": "portal_login",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_b2a2d5d8",
+      "timestamp": "2026-07-29T00:11:19.610037",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_bd871daa",
+      "execution_id": "",
+      "message": "Workflow failed at 'create_quote': Quote creation failed: 'NoneType' object has no attribute 'engine'",
+      "details": {
+        "failed_step": "create_quote"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Quote creation failed: 'NoneType' object has no attribute 'engine'"
+    },
+    {
+      "id": "audit_905ec2de",
+      "timestamp": "2026-07-29T00:11:19.621305",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_877daaff",
+      "execution_id": "",
+      "message": "Workflow started: wf_877daaff for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:11:19.621294"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_455cb706",
+      "timestamp": "2026-07-29T00:11:19.627411",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_877daaff",
+      "execution_id": "",
+      "message": "Workflow failed at 'validate_input': Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building",
+      "details": {
+        "failed_step": "validate_input"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Missing required fields: customer_name, customer_ic, sum_insured or sum_insured_building"
+    },
+    {
+      "id": "audit_bb4ca120",
+      "timestamp": "2026-07-29T00:11:19.632826",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_started",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_da3f2331",
+      "execution_id": "",
+      "message": "Workflow started: wf_da3f2331 for great_eastern",
+      "details": {
+        "started_at": "2026-07-29T00:11:19.632815"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_14ac429b",
+      "timestamp": "2026-07-29T00:11:19.638142",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_validate_input",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_da3f2331",
+      "execution_id": "",
+      "message": "Step 'validate_input': success",
+      "details": {
+        "step": "validate_input",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_127ce933",
+      "timestamp": "2026-07-29T00:11:19.667449",
+      "level": "AuditLevel.INFO",
+      "category": "AuditCategory.EXECUTION",
+      "action": "step_portal_login",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_da3f2331",
+      "execution_id": "",
+      "message": "Step 'portal_login': success",
+      "details": {
+        "step": "portal_login",
+        "status": "success"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": null
+    },
+    {
+      "id": "audit_6882c298",
+      "timestamp": "2026-07-29T00:11:19.697888",
+      "level": "AuditLevel.ERROR",
+      "category": "AuditCategory.WORKFLOW",
+      "action": "workflow_failed",
+      "actor": "system",
+      "portal_id": "great_eastern",
+      "workflow_id": "wf_da3f2331",
+      "execution_id": "",
+      "message": "Workflow failed at 'create_quote': Quote creation failed: 'NoneType' object has no attribute 'engine'",
+      "details": {
+        "failed_step": "create_quote"
+      },
+      "sensitive": false,
+      "duration_ms": 0.0,
+      "error": "Quote creation failed: 'NoneType' object has no attribute 'engine'"
+    }
+  ],
+  "approvals": []
+}
