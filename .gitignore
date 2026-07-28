@@ -36,7 +36,6 @@ capture_mode.py
 # Generated
 src/bridge/
 dist/
-*.spec
 
 # Build artifacts
 build/pyinstaller/
