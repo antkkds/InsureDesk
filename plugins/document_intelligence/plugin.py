@@ -176,10 +176,7 @@ class DocumentIntelligencePlugin(Plugin):
         if doc is None:
             return {"error": "SDK pipeline failed", "indexed": False}
 
-        import importlib
-        SQLiteIndexer = importlib.import_module(
-            "document_intelligence.index.sqlite"
-        ).SQLiteIndexer
+        from document_intelligence.index.sqlite import SQLiteIndexer
 
         indexer = SQLiteIndexer(db_path or "./knowledge/search.db")
         import asyncio
@@ -240,14 +237,21 @@ class DocumentIntelligencePlugin(Plugin):
 
         Returns a Document object or None on failure.
         """
-        import importlib
         try:
-            DocumentPipeline = importlib.import_module("document_intelligence").DocumentPipeline
-            PDFImporter = importlib.import_module("document_intelligence.importer.pdf").PDFImporter
-            TextLayerNormalizer = importlib.import_module("document_intelligence.normalize.textlayer").TextLayerNormalizer
-            LayoutAnalyzer = importlib.import_module("document_intelligence.normalize.layout").LayoutAnalyzer
-            HeadingDetector = importlib.import_module("document_intelligence.normalize.heading").HeadingDetector
-            MarkdownBuilder = importlib.import_module("document_intelligence.normalize.markdown").MarkdownBuilder
+            from document_intelligence import DocumentPipeline
+            from document_intelligence.importer.pdf import PDFImporter
+            from document_intelligence.normalize.textlayer import (
+                TextLayerNormalizer,
+            )
+            from document_intelligence.normalize.layout import (
+                LayoutAnalyzer,
+            )
+            from document_intelligence.normalize.heading import (
+                HeadingDetector,
+            )
+            from document_intelligence.normalize.markdown import (
+                MarkdownBuilder,
+            )
 
             pipeline = DocumentPipeline()
             pipeline.add_importer(PDFImporter())
@@ -271,13 +275,11 @@ class DocumentIntelligencePlugin(Plugin):
     @staticmethod
     def _extract_pymupdf(pdf_path: str) -> str:
         """Direct PyMuPDF extraction fallback — no SDK."""
-        import importlib
         try:
-            fitz = importlib.import_module("fitz")
+            import fitz  # PyMuPDF
         except ImportError:
             raise ImportError(
-                "PyMuPDF (fitz) not installed. "
-                "Install the document-intelligence plugin."
+                "PyMuPDF (fitz) not installed. Run: pip install pymupdf"
             )
 
         doc = fitz.open(pdf_path)

@@ -4,7 +4,9 @@ Central registry for discovering and loading plugins.
 """
 from __future__ import annotations
 
+import importlib.util
 import logging
+import sys
 from typing import Any, Dict, List, Optional
 
 from src.plugins.base import Plugin, PluginContext
@@ -96,6 +98,79 @@ class PluginRegistry:
     @property
     def count(self) -> int:
         return len(self._plugins)
+
+    # ── External plugin loading ────────────────────────────
+
+    def load_from_directory(self, plugin_dir: str) -> int:
+        """Discover and load plugins from an external directory.
+
+        Scans ``plugin_dir`` for subdirectories containing a ``plugin.py``
+        that defines a subclass of ``Plugin``.  Each such subdirectory is
+        treated as a plugin package and imported at runtime.
+
+        Args:
+            plugin_dir: Absolute path to the plugins directory.
+
+        Returns:
+            Number of plugins successfully loaded.
+
+        Example layout::
+
+            plugins/
+                document_intelligence/
+                    __init__.py
+                    plugin.py       <-- must define Plugin subclass
+                    models.py
+                    parser.py
+                    converter.py
+        """
+        from pathlib import Path
+
+        pdir = Path(plugin_dir)
+        if not pdir.is_dir():
+            logger.info("Plugin directory not found: %s", plugin_dir)
+            return 0
+
+        loaded = 0
+        for subdir in sorted(pdir.iterdir()):
+            if not subdir.is_dir():
+                continue
+            pkg_init = subdir / "__init__.py"
+            if not pkg_init.exists():
+                continue
+
+            pkg_name = subdir.name
+            try:
+                # Add plugin dir to sys.path so the package can use relative imports
+                pdir_str = str(pdir)
+                if pdir_str not in sys.path:
+                    sys.path.insert(0, pdir_str)
+
+                # Import the package by name
+                pkg = importlib.import_module(pkg_name)
+
+                # Find a Plugin subclass in the package
+                found = False
+                for attr_name in dir(pkg):
+                    attr = getattr(pkg, attr_name)
+                    if (isinstance(attr, type)
+                            and issubclass(attr, Plugin)
+                            and attr is not Plugin):
+                        instance = attr()
+                        self.register(instance)
+                        found = True
+                        loaded += 1
+                        break
+
+                if not found:
+                    logger.warning(
+                        "No Plugin subclass found in %s", pkg_init
+                    )
+
+            except Exception as exc:
+                logger.error("Failed to load plugin %s: %s", pkg_name, exc)
+
+        return loaded
 
 
 # Global registry singleton

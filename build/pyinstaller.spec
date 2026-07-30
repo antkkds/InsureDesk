@@ -14,7 +14,8 @@ import sys
 from pathlib import Path
 
 # ── Paths ─────────────────────────────────────────────────────
-HERE = Path(__file__).parent
+import os
+HERE = Path(os.getcwd()) / "build"
 ROOT = HERE.parent
 
 # ── Version ────────────────────────────────────────────────────
@@ -40,6 +41,14 @@ if config_yaml.exists():
 # Version file
 _VERSION_FILES = [(str(VERSION_FILE), "build")]
 
+# External plugins (copied alongside the exe)
+PLUGINS_SRC = ROOT / "plugins"
+if PLUGINS_SRC.exists():
+    for f in PLUGINS_SRC.rglob("*"):
+        if f.is_file():
+            dest = str(f.relative_to(ROOT).parent)
+            _DATA_FILES.append((str(f), dest))
+
 # Hidden imports for CLI
 _HIDDEN = [
     "build.version",
@@ -61,6 +70,10 @@ _HIDDEN_IMPORTS = [
     "sqlalchemy.orm",
     "alembic",
     "dateutil",
+    # Core plugin system (NOT document_intelligence — that's external)
+    "src.plugins",
+    "src.plugins.base",
+    "src.plugins.registry",
 ]
 
 a = Analysis(
@@ -71,7 +84,18 @@ a = Analysis(
     hiddenimports=_HIDDEN_IMPORTS,
     hookspath=[],
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        # Excluded: document-intelligence SDK (external plugin)
+        "document_intelligence",
+        "document_intelligence.core",
+        "document_intelligence.importer",
+        "document_intelligence.normalize",
+        "document_intelligence.storage",
+        "document_intelligence.index",
+        # Excluded: PyMuPDF (part of external plugin)
+        "fitz",
+        "pymupdf",
+    ],
     noarchive=False,
 )
 
@@ -97,7 +121,6 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=str(ROOT / "build" / "insuredesk.ico") if (ROOT / "build" / "insuredesk.ico").exists() else None,
-    version=VERSION,
 )
 
 # Also build a CLI version with console
@@ -120,7 +143,6 @@ exe_cli = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version=VERSION,
 )
 
 # COLLECT for one-folder packaging (easier to bundle with Inno Setup)
