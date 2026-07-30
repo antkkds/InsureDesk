@@ -23,6 +23,19 @@ def main():
     app.setApplicationName("InsureDesk")
     app.setOrganizationName("UIP-AI")
 
+    # ── Single-instance lock ──────────────────────────────
+    from PySide6.QtCore import QSharedMemory
+    lock = QSharedMemory("InsureDesk-42a7e1f3")  # unique key
+    if not lock.create(1):
+        # Another instance is running — bring it to front and exit
+        import ctypes
+        hwnd = ctypes.windll.user32.FindWindowW(None, "InsureDesk — Insurance Agent Workspace")
+        if hwnd:
+            ctypes.windll.user32.ShowWindow(hwnd, 1)    # SW_SHOWNORMAL
+            ctypes.windll.user32.SetForegroundWindow(hwnd)
+        sys.exit(0)
+    # ──────────────────────────────────────────────────────
+
     # Set global stylesheet
     app.setStyleSheet("""
         QMainWindow { background: #fafafa; }
