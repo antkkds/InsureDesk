@@ -16,6 +16,7 @@ from typing import Optional, List, Any
 from src.browser.driver import BrowserEngine, PageInfo, Cookie, cookie_to_dict, dict_to_cookie
 from src.browser.chrome.connection import CdpConnection
 from src.browser.chrome.launcher import ChromeLauncher
+from src.browser.chrome.manager import ChromeManager
 from src.browser.chrome.tabs import list_tabs, find_tab_by_domain, create_tab, activate_tab, TabInfo
 
 
@@ -39,6 +40,7 @@ class ChromeCDPDriver(BrowserEngine):
         self._port = 0
         self._running = False
         self._domains_enabled = False
+        self._manager: Optional[ChromeManager] = None
 
     @property
     def name(self) -> str:
@@ -47,12 +49,12 @@ class ChromeCDPDriver(BrowserEngine):
     async def start(self, headless: bool = False, port: int = 0) -> bool:
         """Start the ChromeCDPDriver.
 
-        Connects to Chrome on the given CDP port.
-        If no port given, tries 9222.
+        Auto-launches Chrome with CDP enabled (via ChromeManager)
+        if Chrome is not already running on the CDP port.
 
         Args:
-            headless: Ignored (Chrome is already running with GUI).
-            port: CDP port (default: auto-detect or 9222).
+            headless: If True, run in headless mode.
+            port: CDP port (default: 0 = auto-select free port).
 
         Returns:
             True if connected successfully.
@@ -60,15 +62,10 @@ class ChromeCDPDriver(BrowserEngine):
         if self._running:
             return True
 
-        # Use given port or default
-        self._port = port or 9222
-
-        # Check if Chrome CDP is available
-        if not ChromeLauncher.is_chrome_running(self._port):
-            raise RuntimeError(
-                f"Chrome CDP not available on port {self._port}. "
-                "Use ChromeManager to auto-start Chrome."
-            )
+        # Use ChromeManager to ensure Chrome is running
+        self._manager = ChromeManager(port=port or 0)
+        await self._manager.start()
+        self._port = self._manager.port
 
         # Get page targets and find a suitable tab
         tabs = list_tabs(self._port)
@@ -107,7 +104,7 @@ class ChromeCDPDriver(BrowserEngine):
             pass
 
     async def stop(self):
-        """Disconnect from Chrome."""
+        """Disconnect from Chrome and release resources."""
         self._running = False
         self._domains_enabled = False
         if self._conn:
@@ -117,6 +114,12 @@ class ChromeCDPDriver(BrowserEngine):
                 pass
             self._conn = None
         self._tab = None
+        if self._manager:
+            try:
+                await self._manager.stop()
+            except Exception:
+                pass
+            self._manager = None
 
     async def navigate(self, url: str, timeout: int = 30000) -> bool:
         """Navigate to a URL and wait for page load.

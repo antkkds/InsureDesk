@@ -10,6 +10,7 @@ Orchestrates:
 import asyncio
 import os
 import platform
+import socket
 import tempfile
 from typing import Optional, Callable
 
@@ -37,6 +38,13 @@ class ChromeManager:
         self._connections: list = []
 
     @staticmethod
+    def _find_free_port() -> int:
+        """Find a free TCP port on localhost."""
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            return s.getsockname()[1]
+
+    @staticmethod
     def _default_profile_dir() -> str:
         """Get the default InsureDesk Chrome profile directory."""
         system = platform.system()
@@ -54,6 +62,10 @@ class ChromeManager:
         """
         if self._running:
             return
+
+        # Auto-select free port if none specified
+        if self.port == 0:
+            self.port = self._find_free_port()
 
         # Check if Chrome is already running with CDP
         if ChromeLauncher.is_chrome_running(self.port):

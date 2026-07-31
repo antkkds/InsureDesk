@@ -64,7 +64,6 @@ _HIDDEN_IMPORTS = [
     "keyring",
     "keyring.backends",
     "yaml",
-    "playwright",
     "sqlalchemy",
     "sqlalchemy.ext.declarative",
     "sqlalchemy.orm",
@@ -95,6 +94,10 @@ a = Analysis(
         # Excluded: PyMuPDF (part of external plugin)
         "fitz",
         "pymupdf",
+        # Excluded: Playwright browsers (use system Chrome instead)
+        "playwright",
+        "playwright.async_api",
+        "playwright.sync_api",
     ],
     noarchive=False,
 )
