@@ -38,12 +38,15 @@ class PortalAdapter(ABC):
     """
 
     def __init__(self, mapping: Optional[PortalMapping] = None,
-                 engine: Optional[BrowserEngine] = None):
+                 engine: Optional[BrowserEngine] = None,
+                 login_url: Optional[str] = None):
         # Auto-load mapping from adapter_name if not provided
         if mapping is None:
             mapping = load_portal_mapping(self.adapter_name)
         self.mapping = mapping
         self._engine = engine
+        # DB Portal.login_url override (higher priority than YAML)
+        self._login_url = login_url
         self.form = FormEngine(engine)
         self.session = SessionManager()
         self.nav = NavigationEngine(self)
@@ -73,7 +76,12 @@ class PortalAdapter(ABC):
 
     @property
     def start_url(self) -> str:
-        """URL to navigate to when starting this portal."""
+        """URL to navigate to when starting this portal.
+
+        Priority: DB Portal.login_url → YAML login_url → YAML base_url.
+        """
+        if self._login_url:
+            return self._login_url
         if self.mapping and self.mapping.login_url:
             return self.mapping.login_url
         if self.mapping and self.mapping.base_url:
@@ -543,8 +551,16 @@ _ADAPTER_MAP: Dict[str, type] = {
 
 def get_adapter(portal_id: str,
                 mapping: Optional[PortalMapping] = None,
-                engine: Optional[BrowserEngine] = None) -> Optional[PortalAdapter]:
-    """Get a portal adapter by ID, auto-loading mapping."""
+                engine: Optional[BrowserEngine] = None,
+                login_url: Optional[str] = None) -> Optional[PortalAdapter]:
+    """Get a portal adapter by ID, auto-loading mapping.
+
+    Args:
+        portal_id: Portal identifier (e.g. 'great_eastern', 'aia').
+        mapping: Optional pre-loaded PortalMapping. Auto-loaded if None.
+        engine: Optional BrowserEngine instance.
+        login_url: Optional DB Portal.login_url override (takes priority).
+    """
     adapter_cls = _ADAPTER_MAP.get(portal_id)
     if not adapter_cls:
         return None
@@ -552,7 +568,7 @@ def get_adapter(portal_id: str,
     if mapping is None:
         mapping = load_portal_mapping(portal_id)
 
-    return adapter_cls(mapping=mapping, engine=engine)
+    return adapter_cls(mapping=mapping, engine=engine, login_url=login_url)
 
 
 def list_adapters() -> List[Dict[str, Any]]:

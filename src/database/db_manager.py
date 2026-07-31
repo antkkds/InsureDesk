@@ -73,3 +73,57 @@ def seed_companies(session):
     ]
     session.add_all(defaults)
     session.commit()
+
+
+def ensure_portals(session):
+    """Create a default Portal for every company (idempotent).
+
+    Extracts login_url/base_url from YAML profile when available.
+    profile_state:
+        READY        — has YAML automation profile
+        UNCONFIGURED — no profile yet (login_url may be empty)
+    """
+    from .models import Company, Portal
+
+    companies = session.query(Company).all()
+    created = 0
+    for c in companies:
+        # Skip if company already has a portal
+        if session.query(Portal).filter(Portal.company_id == c.id).count() > 0:
+            continue
+
+        login_url = ""
+        base_url = ""
+        profile_path = None
+        profile_state = "UNCONFIGURED"
+
+        if c.adapter_name:
+            try:
+                from src.portal.mapping import PORTALS_DIR, load_portal_mapping
+
+                yaml_path = PORTALS_DIR / f"{c.adapter_name}.yaml"
+                if yaml_path.exists():
+                    mapping = load_portal_mapping(c.adapter_name)
+                    if mapping:
+                        login_url = mapping.login_url
+                        base_url = mapping.base_url
+                        profile_path = str(yaml_path)
+                        profile_state = "READY"
+            except Exception:
+                pass
+
+        portal = Portal(
+            company_id=c.id,
+            name=f"{c.short_name} Portal",
+            login_url=login_url or None,
+            base_url=base_url or None,
+            profile_path=profile_path,
+            profile_state=profile_state,
+            is_default=True,
+        )
+        session.add(portal)
+        created += 1
+
+    if created:
+        session.commit()
+    return created

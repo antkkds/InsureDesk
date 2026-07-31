@@ -58,13 +58,15 @@ def _ensure_loaded():
 
 def get_adapter(portal_id: str,
                 mapping: Optional[PortalMapping] = None,
-                engine: Optional[BrowserEngine] = None):
+                engine: Optional[BrowserEngine] = None,
+                login_url: Optional[str] = None):
     """Get a portal adapter instance by ID.
 
     Args:
         portal_id: Portal identifier (e.g. 'great_eastern', 'aia').
         mapping: Optional pre-loaded PortalMapping. Auto-loaded if None.
         engine: Optional BrowserEngine instance.
+        login_url: Optional DB Portal.login_url override (takes priority).
 
     Returns:
         PortalAdapter instance, or None if not found.
@@ -73,11 +75,9 @@ def get_adapter(portal_id: str,
     adapter_cls = _ADAPTER_MAP.get(portal_id)
     if not adapter_cls:
         return None
-
     if mapping is None:
         mapping = load_portal_mapping(portal_id)
-
-    return adapter_cls(mapping=mapping, engine=engine)
+    return adapter_cls(mapping=mapping, engine=engine, login_url=login_url)
 
 
 def list_adapters() -> List[Dict[str, Any]]:

@@ -25,7 +25,7 @@ import logging
 logger = logging.getLogger("insuredesk.desktop.app")
 
 # Import InsureDesk modules
-from src.database.db_manager import init_db, get_engine, get_session, seed_companies
+from src.database.db_manager import init_db, get_engine, get_session, seed_companies, ensure_portals
 from src.database.models import Base, Customer, Policy, Document, Company, Setting
 
 from src.customers.repository import CustomerRepository, PolicyRepository, DocumentRepository, CustomerData, PolicyData, DocumentData
@@ -61,6 +61,7 @@ class InsureDeskWindow(QMainWindow):
         init_db(engine)
         self.session = get_session(engine)
         seed_companies(self.session)
+        ensure_portals(self.session)
 
         # Initialize services
         self.customer_repo = CustomerRepository(self.session)
@@ -1317,8 +1318,8 @@ class CompaniesWidget(QWidget):
         layout.addLayout(header)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels(["Company", "Short Name", "Website", "Adapter", "Status", "Last Sync"])
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels(["Company", "Short Name", "Website", "Agent Portal", "Adapter", "Status", "Last Sync"])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setAlternatingRowColors(True)
         layout.addWidget(self.table)
@@ -1332,11 +1333,23 @@ class CompaniesWidget(QWidget):
             self.table.setItem(row, 0, QTableWidgetItem(c.name))
             self.table.setItem(row, 1, QTableWidgetItem(c.short_name))
             self.table.setItem(row, 2, QTableWidgetItem(c.portal_url or "—"))
-            self.table.setItem(row, 3, QTableWidgetItem(c.adapter_name or "—"))
+            # Agent portal status (default portal)
+            portal = c.portals[0] if c.portals else None
+            if portal:
+                if portal.profile_state == "READY":
+                    portal_display = "✅ Configured"
+                elif portal.login_url:
+                    portal_display = "⚠️ No Profile"
+                else:
+                    portal_display = "⬜ Not Configured"
+            else:
+                portal_display = "—"
+            self.table.setItem(row, 3, QTableWidgetItem(portal_display))
+            self.table.setItem(row, 4, QTableWidgetItem(c.adapter_name or "—"))
             status = "✅ Active" if c.is_active else "❌ Inactive"
-            self.table.setItem(row, 4, QTableWidgetItem(status))
+            self.table.setItem(row, 5, QTableWidgetItem(status))
             sync = c.last_sync.strftime("%Y-%m-%d %H:%M") if c.last_sync else "Never"
-            self.table.setItem(row, 5, QTableWidgetItem(sync))
+            self.table.setItem(row, 6, QTableWidgetItem(sync))
 
     def _add_company(self):
         """Open dialog to add a new insurance company."""
@@ -1357,6 +1370,10 @@ class CompaniesWidget(QWidget):
         url_input.setPlaceholderText("e.g. https://www.greateasternlife.com/my")
         layout.addRow("Official Website:", url_input)
 
+        login_input = QLineEdit()
+        login_input.setPlaceholderText("e.g. https://geglink.greateasterngeneral.com/geglink/userlogin.html")
+        layout.addRow("Agent Portal Login:", login_input)
+
         # Buttons
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
@@ -1371,16 +1388,19 @@ class CompaniesWidget(QWidget):
                           border-radius: 4px; font-weight: bold; }
             QPushButton:hover { background: #16213e; }
         """)
-        save_btn.clicked.connect(lambda: self._save_company(dialog, name_input, short_input, url_input))
+        save_btn.clicked.connect(lambda: self._save_company(dialog, name_input, short_input, url_input, login_input))
         btn_layout.addWidget(save_btn)
         layout.addRow(btn_layout)
 
         dialog.exec()
 
-    def _save_company(self, dialog, name_input, short_input, url_input):
+    def _save_company(self, dialog, name_input, short_input, url_input, login_input):
+        from src.database.models import Portal
+
         name = name_input.text().strip()
         short = short_input.text().strip()
         url = url_input.text().strip()
+        login_url = login_input.text().strip()
 
         if not name:
             QMessageBox.warning(dialog, "Missing Info", "Company name is required.")
@@ -1404,6 +1424,19 @@ class CompaniesWidget(QWidget):
             is_active=True,
         )
         self.app.session.add(company)
+        self.app.session.flush()  # get company.id
+
+        # Create default Portal (agent login entry)
+        portal = Portal(
+            company_id=company.id,
+            name=f"{short} Portal",
+            login_url=login_url if login_url else None,
+            base_url=login_url if login_url else None,
+            profile_path=None,
+            profile_state="UNCONFIGURED" if login_url else "UNCONFIGURED",
+            is_default=True,
+        )
+        self.app.session.add(portal)
         self.app.session.commit()
         self._refresh()
         dialog.accept()
