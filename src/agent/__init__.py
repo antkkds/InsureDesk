@@ -16,6 +16,12 @@ Engine, BridgeServer (8199), or the local 9876 API.
 
 from src.agent.client import AgentClient, AgentClientConfig, AgentCommand
 from src.agent.command_loop import AgentCommandLoop
+from src.agent.e2e_profile import (
+    DEFAULT_PROFILE,
+    E2EBlockedError,
+    E2EProfile,
+    E2EProfileEnforcer,
+)
 from src.agent.handlers import (
     CapabilityHandler,
     CapabilityHandlerRegistry,
@@ -23,18 +29,26 @@ from src.agent.handlers import (
 )
 from src.agent.heartbeat import AgentHeartbeat
 from src.agent.manifest import InsureDeskManifest
-from src.agent.result_reporter import ResultReporter, map_error_code
+from src.agent.result_reporter import ResultReporter, map_error, map_error_code
+from src.agent.trace import ExecutionTracer, execution_tracer
 
 __all__ = [
     "AgentClient",
     "AgentClientConfig",
     "AgentCommand",
     "AgentCommandLoop",
+    "DEFAULT_PROFILE",
+    "E2EBlockedError",
+    "E2EProfile",
+    "E2EProfileEnforcer",
     "CapabilityHandler",
     "CapabilityHandlerRegistry",
     "QuoteCapabilityHandler",
     "AgentHeartbeat",
     "InsureDeskManifest",
     "ResultReporter",
+    "map_error",
     "map_error_code",
+    "ExecutionTracer",
+    "execution_tracer",
 ]

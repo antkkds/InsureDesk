@@ -20,8 +20,10 @@ import threading
 from typing import Optional
 
 from src.agent.client import AgentClient
+from src.agent.e2e_profile import E2EProfile, E2EProfileEnforcer
 from src.agent.handlers import CapabilityHandlerRegistry
 from src.agent.result_reporter import ResultReporter
+from src.agent.trace import ExecutionTracer, execution_tracer
 
 logger = logging.getLogger(__name__)
 
@@ -35,15 +37,23 @@ class AgentCommandLoop:
         handlers: CapabilityHandlerRegistry,
         poll_interval_seconds: float = 3.0,
         reporter: Optional[ResultReporter] = None,
+        enforcer: Optional[E2EProfileEnforcer] = None,
+        tracer: Optional[ExecutionTracer] = None,
     ) -> None:
         self.client = client
         self.handlers = handlers
         self.poll_interval = poll_interval_seconds
         self.reporter = reporter or ResultReporter()
+        # Phase 4.6: enforce the real-validation profile on every command
+        self.enforcer = enforcer or E2EProfileEnforcer(
+            E2EProfile.from_dict(None)
+        )
+        self.tracer = tracer or execution_tracer
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self.executed_count = 0
         self.failed_count = 0
+        self.blocked_count = 0
 
     def start(self) -> None:
         if self._thread and self._thread.is_alive():
@@ -85,6 +95,27 @@ class AgentCommandLoop:
             await asyncio.sleep(self.poll_interval)
 
     async def _execute(self, execution_id: str, capability: str, arguments: dict) -> None:
+        self.tracer.log(execution_id, "agent_received", {"capability": capability})
+
+        # Phase 4.6: enforce the E2E profile BEFORE executing
+        try:
+            self.enforcer.check(capability, arguments)
+        except Exception as e:  # noqa: BLE001 — policy block
+            self.blocked_count += 1
+            self.failed_count += 1
+            payload = self.reporter.failed(
+                str(e), error_code=getattr(e, "error_code", "READ_ONLY_BLOCKED")
+            )
+            self.tracer.log(execution_id, "blocked_by_policy", {"error": str(e)})
+            try:
+                self.client.report_result(execution_id, payload)
+            except Exception as report_e:  # noqa: BLE001
+                logger.error(
+                    "agent_command_loop.report_failed: execution=%s: %s",
+                    execution_id, report_e,
+                )
+            return
+
         handler = self.handlers.get(capability)
         if handler is None:
             logger.warning("agent_command_loop.unknown_capability: '%s'", capability)
@@ -93,7 +124,12 @@ class AgentCommandLoop:
             )
         else:
             try:
+                self.tracer.log(execution_id, "execution_started", {"capability": capability})
                 payload = await handler.execute(arguments)
+                self.tracer.log(
+                    execution_id, "execution_finished",
+                    {"status": payload.get("status")},
+                )
             except Exception as e:  # noqa: BLE001 — surface as protocol failure
                 payload = self.reporter.failed(e)
         try:
@@ -102,6 +138,9 @@ class AgentCommandLoop:
                 self.executed_count += 1
             else:
                 self.failed_count += 1
+            self.tracer.log(
+                execution_id, "result_reported", {"status": payload.get("status")}
+            )
             logger.info(
                 "agent_command_loop.executed: execution=%s capability=%s status=%s",
                 execution_id, capability, payload.get("status"),
