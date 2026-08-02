@@ -43,7 +43,14 @@ class CapabilityHandler(ABC):
 
 
 class QuoteCapabilityHandler(CapabilityHandler):
-    """Handles insurance.quote.calculate via the existing quote pipeline."""
+    """Handles insurance.quote.calculate via the existing quote pipeline.
+
+    Phase 4.5 safety: the capability is declared readonly in the manifest —
+    the handler refuses mutating actions (save_draft/submit) with
+    READ_ONLY_BLOCKED.
+    """
+
+    MUTATING_KEYWORDS = ("submit", "save_draft", "save", "issue", "delete")
 
     @property
     def capability(self) -> str:
@@ -54,6 +61,17 @@ class QuoteCapabilityHandler(CapabilityHandler):
 
         reporter = ResultReporter()
         mode = arguments.get("execution_mode", "simulation")
+
+        # Phase 4.5 safety gate — readonly policy blocks mutating intents
+        if any(
+            kw in self.capability.lower() or kw in str(arguments).lower()
+            for kw in self.MUTATING_KEYWORDS
+        ):
+            logger.warning(
+                "quote handler blocked by readonly policy: %s", arguments,
+            )
+            return reporter.blocked(self.capability)
+
         try:
             registry = ToolRegistry.get_instance()
             # Lazy-register the existing quote tools if not present (thin

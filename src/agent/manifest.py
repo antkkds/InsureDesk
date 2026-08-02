@@ -19,21 +19,33 @@ class InsureDeskManifest:
     TYPE = "desktop_agent"
     VERSION = "1.0.0"
     TRANSPORT = "http_pull"
+    # Per-capability safety (Phase 4.5 — Agent Capability Scope):
+    #   readonly → calculate/search/status allowed; save/submit blocked
     PROVIDES = [
-        "insurance.quote.calculate",
-        "insurance.claim.status",
-        "insurance.policy.search",
+        {"insurance.quote.calculate": {"safety": "readonly"}},
+        {"insurance.claim.status": {"safety": "readonly"}},
+        {"insurance.policy.search": {"safety": "readonly"}},
     ]
 
     def __init__(
         self,
-        provides: List[str] | None = None,
+        provides: List[Any] | None = None,
         metadata: Dict[str, Any] | None = None,
     ) -> None:
         self.provides = provides or list(self.PROVIDES)
         self.metadata = dict(metadata or {})
         self.metadata.setdefault("vendor", "InsureDesk Pte Ltd")
         self.metadata.setdefault("simulation_supported", True)
+
+    def capability_names(self) -> List[str]:
+        """Flat capability names (for quick checks)."""
+        names = []
+        for item in self.provides:
+            if isinstance(item, str):
+                names.append(item)
+            elif isinstance(item, dict):
+                names.extend(item.keys())
+        return names
 
     def to_dict(self) -> Dict[str, Any]:
         return {

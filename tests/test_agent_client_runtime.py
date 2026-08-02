@@ -128,7 +128,13 @@ class TestManifestRegister:
         assert d["name"] == "insuredesk"
         assert d["type"] == "desktop_agent"
         assert d["transport"] == "http_pull"
-        assert "insurance.quote.calculate" in d["provides"]
+        assert "insurance.quote.calculate" in m.capability_names()
+        # Phase 4.5: per-capability safety scope
+        quote = next(
+            item for item in d["provides"]
+            if "insurance.quote.calculate" in item
+        )
+        assert quote["insurance.quote.calculate"]["safety"] == "readonly"
 
     def test_t1_register_sets_online(self, fake_server):
         client = make_client(fake_server)
