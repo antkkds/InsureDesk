@@ -181,14 +181,20 @@ class CredentialService:
             return True
         return False
 
-    def verify(self, portal: str, account_name: str = "default") -> bool:
+    def verify(self, portal: str, account_name: str = None) -> bool:
         """Test that stored credentials can be decrypted successfully.
+
+        If account_name is None (or the named account doesn't exist),
+        falls back to the portal's default/any credential.
 
         Note: This is NOT a portal login test — it only verifies that
         the encrypted data hasn't been corrupted and the master key works.
         """
         try:
             cred = self.get(portal, account_name)
+            if not cred and account_name:
+                # Named account not found — try default/any for this portal
+                cred = self.get(portal, None)
             if cred:
                 cred.clear()
                 return True
