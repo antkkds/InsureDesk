@@ -105,7 +105,7 @@ class TestMotorPrivateCarSpec:
 
     def test_sections_order_and_count(self):
         names = [s.name for s in self.spec.sections]
-        assert names == ["quotation_details", "owner", "vehicle", "additional"]
+        assert names == ["quotation_details", "owner", "address", "vehicle", "drivers"]
 
     def test_quotation_details_confirmed_selectors(self):
         sec = self.spec.section("quotation_details")
@@ -119,11 +119,13 @@ class TestMotorPrivateCarSpec:
         assert cond.status == "confirmed"
 
     def test_needs_capture_fields_marked(self):
-        """Inferred selectors must be flagged so we calibrate before live runs."""
+        """Only genuinely un-captured selectors are flagged (named driver rows)."""
         owner = self.spec.section("owner")
-        needs = [f.name for f in owner.fields if f.status == "needs_capture"]
-        assert len(needs) == len(owner.fields)  # all owner fields inferred
-        assert "owner_fullname" in needs
+        # owner selectors were LIVE-CAPTURED (proposal* ids) → all confirmed
+        assert all(f.status == "confirmed" for f in owner.fields)
+        drivers = self.spec.section("drivers")
+        needs = [f.name for f in drivers.fields if f.status == "needs_capture"]
+        assert needs == ["named_driver_1"]  # appears only after "Add driver"
 
     def test_to_fill_schema_conversion(self):
         schema = self.spec.section("owner").to_fill_schema()
@@ -134,9 +136,10 @@ class TestMotorPrivateCarSpec:
         assert fd.required is True
 
     def test_date_field_format_preserved(self):
-        fd = self.spec.field("owner", "owner_dob").to_field_definition()
-        assert fd.type == FieldType.DATE
-        assert fd.format == "%d %b %Y"
+        # dob is auto-populated by the portal from NRIC (text read-only reference)
+        fd = self.spec.field("owner", "dob").to_field_definition()
+        assert fd.type == FieldType.TEXT
+        assert fd.required is False
 
     def test_transform_preserved(self):
         fd = self.spec.field("quotation_details", "vehicle_number").to_field_definition()
@@ -167,7 +170,7 @@ class TestMotorPrivateCarSpec:
 
     def test_to_fill_schemas_all_sections(self):
         schemas = self.spec.to_fill_schemas()
-        assert set(schemas.keys()) == {"quotation_details", "owner", "vehicle", "additional"}
+        assert set(schemas.keys()) == {"quotation_details", "owner", "address", "vehicle", "drivers"}
         assert all(isinstance(s, FillSchema) for s in schemas.values())
 
     def test_invalid_field_type_rejected(self):
@@ -192,13 +195,24 @@ class TestMotorPrivateCarSpec:
         # quotation_details: all confirmed → all live-ready
         ready = spec.live_ready_fields("quotation_details")
         assert len(ready) == len(spec.section("quotation_details").fields)
-        # owner: all needs_capture → none live-ready
-        assert spec.live_ready_fields("owner") == []
+        # owner: live-captured → all live-ready
+        assert len(spec.live_ready_fields("owner")) == len(spec.section("owner").fields)
+        # drivers: all_drivers_cover confirmed, named_driver_1 needs_capture
+        drivers_ready = [f.name for f in spec.live_ready_fields("drivers")]
+        assert "all_drivers_cover" in drivers_ready
+        assert "named_driver_1" not in drivers_ready
 
     def test_live_schema_excludes_unconfirmed(self):
         spec = MotorPrivateCarSpec.from_yaml_file(MOTOR_YAML)
         schema = spec.live_schema("quotation_details")
         assert schema is not None
         assert "condition" in schema.fields
-        # owner section has no confirmed fields → None
-        assert spec.live_schema("owner") is None
+        # owner section now live-verified → live schema populated
+        owner_schema = spec.live_schema("owner")
+        assert owner_schema is not None
+        assert "email" in owner_schema.fields
+        # drivers: named_driver_1 (needs_capture) excluded from live schema
+        drivers_schema = spec.live_schema("drivers")
+        assert drivers_schema is not None
+        assert "named_driver_1" not in drivers_schema.fields
+        assert "all_drivers_cover" in drivers_schema.fields

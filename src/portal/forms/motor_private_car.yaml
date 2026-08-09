@@ -8,21 +8,30 @@
 #    sst_number/vehicle_number/place). condition options: REGISTERED /
 #    NEW REGISTERED / REGISTERED-TRANSFER OWNER (no "USED").
 #    NOTE: condition=NEW REGISTERED → vehicleNumber disabled (new car, no plate).
-#    idNumber read-back is truncated: '881212-14-5678' → '8812121456' (Verifier
-#    is truncation-tolerant).
-# ⚠️ Step 2+ (owner/vehicle/additional): ids inferred from Angular id-naming,
-#    marked needs_capture — calibrate before live run.
+#    idNumber: maxlength=12 + digitonly directive → fill 12 digits WITHOUT
+#    dashes ('881212145678'); '881212-14-5678' gets truncated to 10 digits
+#    → client-side validation "Please provide a valid ID number."
+# ✅ details (owner/address/vehicle/drivers): LIVE-CAPTURED 2026-08.
+#    Real IDs use proposal* prefix (owner/address) + vehicle* (vehicle) +
+#    insured_*_0 (named driver). Many fields AUTO-populated by portal after
+#    vehicle lookup (chassis/engine/capacity/make/year/nvic) — omit from data.
+#    Continue button on Details = button:has-text('Continue') (SPA, no nav).
+#    Autocomplete options (live): proposalTitle=Madam/Mr/Ms;
+#    proposalMarital=Married/Single; proposalStateApplicant=Malaysian states;
+#    vehicleBodyType=SEDAN/SALOON/SUV/SPORT/...; safetyFeature=ABS & Airbags*.
+#    marital/country/model/ncd_Per/marketValue start DISABLED (Angular gating)
+#    → force_enable: true where operator must fill.
 
 product_id: "PMOT"
 product_name: "Private Motor Insurance (Private Car)"
 portal: "great_eastern_gears"
-version: "1.0"
+version: "2.0"
 entry_url: "/MY/AgencySales/quotations/introduce"
 
 sections:
   - name: quotation_details
     description: "Step 1 — applicant type & vehicle identifiers"
-    submit: "button:has-text('Next')"
+    submit: "button:has-text('Continue')"
     fields:
       - name: applicant_type
         selector: "input[name='radioBasic']"
@@ -40,7 +49,7 @@ sections:
           autocomplete: true
           force_enable: true        # input starts disabled (Angular binding)
           autocomplete_option: "mat-option"
-          hint: "NEW REGISTERED / USED — removeAttribute('disabled') first"
+          hint: "REGISTERED / NEW REGISTERED / REGISTERED-TRANSFER OWNER"
 
       - name: id_type
         selector: "#idType"
@@ -56,11 +65,18 @@ sections:
         selector: "#idNumber"
         type: text
         required: true
+        options: { hint: "12 digits, NO dashes (maxlength=12 + digitonly)" }
 
       - name: sst_number
         selector: "#sstNumber"
         type: text
         required: false
+
+      - name: tin_number
+        selector: "#tinNumber"
+        type: text
+        required: false
+        options: { force_enable: true, hint: "optional; starts disabled" }
 
       - name: vehicle_number
         selector: "#vehicleNumber"
@@ -78,306 +94,260 @@ sections:
           hint: "State (autocomplete)"
 
   - name: owner
-    description: "Step 2 — proposer / owner details"
-    submit: "button:has-text('Next')"
+    description: "Step 2a — proposer / owner details"
+    submit: "button:has-text('Continue')"
     fields:
-      - name: owner_id_number
-        selector: "#ownerIdNumber"
-        type: text
-        required: true
-        status: needs_capture
-
       - name: salutation
-        selector: "#salutation"
-        type: select
-        required: true
-        status: needs_capture
-
-      - name: owner_fullname
-        selector: "#ownerFullName"
+        selector: "#proposalTitle"
         type: text
         required: true
-        status: needs_capture
+        options: { autocomplete: true, autocomplete_option: "mat-option", hint: "Mr / Ms / Madam" }
+
+      - name: fullname
+        selector: "#proposalFullName"
+        type: text
+        required: true
 
       - name: gender
-        selector: "input[name='gender'][value='Male']"
+        selector: "input[name='radioBasic']"
         type: radio
         required: true
-        options: { values: ["Male", "Female"] }
-        status: needs_capture
+        options: { values: ["M", "F"], hint: "value is M/F (NOT Male/Female)" }
 
-      - name: owner_dob
-        selector: "#ownerDob"
-        type: date
-        required: true
-        format: "%d %b %Y"
-        options: { hint: "bsdatepicker — type '01 JAN 1990' directly" }
-        status: needs_capture
+      - name: dob
+        selector: "#proposalDOB"
+        type: text
+        required: false
+        options: { hint: "AUTO-populated from NRIC (DD MMM YYYY) — omit from data" }
 
       - name: nationality
-        selector: "#nationality"
+        selector: "#proposalNation"
         type: text
-        required: true
-        options: { autocomplete: true, autocomplete_option: "mat-option" }
-        status: needs_capture
+        required: false
+        options: { autocomplete: true, autocomplete_option: "mat-option", hint: "AUTO-populated (Malaysia) — omit from data" }
 
       - name: marital_status
-        selector: "#maritalStatus"
-        type: select
+        selector: "#proposalMarital"
+        type: text
         required: true
-        status: needs_capture
+        options: { autocomplete: true, autocomplete_option: "mat-option", force_enable: true, hint: "Single / Married (starts disabled)" }
 
       - name: years_driving_exp
-        selector: "#yearsDrivingExp"
+        selector: "#year_experience"
         type: text
         required: true
-        status: needs_capture
 
       - name: mobile
-        selector: "#mobile"
+        selector: "#proposalMobileNumber"
         type: text
         required: true
-        status: needs_capture
 
       - name: home_phone
-        selector: "#homePhone"
+        selector: "#proposalHomeNumber"
         type: text
         required: false
-        status: needs_capture
 
       - name: email
-        selector: "#email"
+        selector: "#proposalEmail"
         type: text
         required: true
-        status: needs_capture
 
-      - name: pds_dpn_consent
-        selector: "#pdsDpnConsent"
+      - name: pds_consent
+        selector: "mat-checkbox:has-text(\"acknowledge and declare\") input[type=checkbox]"
         type: checkbox
         required: true
-        status: needs_capture
+        options: { hint: "Acknowledge PDS & PDPN consent (email checkbox). ID is unstable (#mat-checkbox-N) — use :has-text." }
 
+  - name: address
+    description: "Step 2b — mailing address (same page, after owner)"
+    submit: "button:has-text('Continue')"
+    fields:
       - name: postcode
-        selector: "#postcode"
+        selector: "#proposalPostalCode"
         type: text
         required: true
-        status: needs_capture
 
       - name: state
-        selector: "#state"
+        selector: "#proposalStateApplicant"
         type: text
         required: true
-        options: { autocomplete: true, autocomplete_option: "mat-option" }
-        status: needs_capture
+        options: { autocomplete: true, autocomplete_option: "mat-option", hint: "Malaysian states (KUALA LUMPUR, SELANGOR...)" }
 
       - name: country
-        selector: "#country"
+        selector: "#proposalCountryApplicant"
         type: text
-        required: true
-        options: { autocomplete: true, autocomplete_option: "mat-option" }
-        status: needs_capture
+        required: false
+        options: { hint: "AUTO-locked (disabled) — omit from data" }
 
       - name: address1
-        selector: "#address1"
+        selector: "#proposalAddressLine1"
         type: text
         required: true
-        status: needs_capture
 
       - name: address2
-        selector: "#address2"
+        selector: "#proposalAddressLine2"
         type: text
         required: false
-        status: needs_capture
 
       - name: address3
-        selector: "#address3"
+        selector: "#proposalAddressLine3"
         type: text
         required: false
-        status: needs_capture
 
       - name: address4
-        selector: "#address4"
+        selector: "#proposalAddressLine4"
         type: text
         required: false
-        status: needs_capture
 
   - name: vehicle
-    description: "Step 2 — vehicle details (same page, after owner)"
-    submit: "button:has-text('Next')"
+    description: "Step 2c — vehicle details (same page; mostly AUTO after plate lookup)"
+    submit: "button:has-text('Continue')"
     fields:
-      - name: vehicle_number
-        selector: "#vehicleNumber"
+      - name: detail_vehicle_number
+        selector: "#detailVehicleNumber"
         type: text
-        required: true
-        transform: uppercase
-        status: needs_capture
+        required: false
+        options: { hint: "AUTO (read-only copy from step 1) — omit from data" }
 
       - name: vehicle_indicator
         selector: "#vehicleIndicator"
-        type: select
-        required: true
-        status: needs_capture
+        type: text
+        required: false
+        options: { hint: "AUTO (IMPORTED/LOCAL) — omit from data" }
 
       - name: coverage_type
-        selector: "#coverageType"
-        type: select
-        required: true
-        options: { hint: "Comprehensive / Third Party etc." }
-        status: needs_capture
+        selector: "#vehicleCoverageType"
+        type: text
+        required: false
+        options: { hint: "AUTO (COMPREHENSIVE) — omit from data" }
 
       - name: body_type
-        selector: "#bodyType"
-        type: select
+        selector: "#vehicleBodyType"
+        type: text
         required: true
-        status: needs_capture
+        options: { autocomplete: true, autocomplete_option: "mat-option", hint: "SEDAN / SALOON / SUV / SPORT..." }
 
       - name: chassis_no
-        selector: "#chassisNo"
+        selector: "#chassisNumber"
         type: text
-        required: true
-        transform: uppercase
-        status: needs_capture
+        required: false
+        options: { hint: "AUTO from vehicle lookup — omit from data" }
 
       - name: engine_no
-        selector: "#engineNo"
+        selector: "#engineNumber"
         type: text
-        required: true
-        transform: uppercase
-        status: needs_capture
+        required: false
+        options: { hint: "AUTO from vehicle lookup — omit from data" }
 
       - name: engine_capacity
         selector: "#engineCapacity"
         type: text
-        required: true
-        status: needs_capture
+        required: false
+        options: { hint: "AUTO from vehicle lookup — omit from data" }
 
       - name: make
-        selector: "#make"
+        selector: "#vehicleMake"
         type: text
-        required: true
-        options: { autocomplete: true, autocomplete_option: "mat-option" }
-        status: needs_capture
+        required: false
+        options: { autocomplete: true, autocomplete_option: "mat-option", hint: "AUTO (HONDA) — omit from data" }
 
       - name: model
-        selector: "#model"
+        selector: "#vehicleModel"
         type: text
-        required: true
-        options: { autocomplete: true, autocomplete_option: "mat-option" }
-        status: needs_capture
+        required: false
+        options: { hint: "AUTO/disabled (lookup may fail for fake plates) — omit from data" }
 
       - name: use_of_vehicle
-        selector: "#useOfVehicle"
-        type: select
-        required: true
-        status: needs_capture
+        selector: "#useVehicle"
+        type: text
+        required: false
+        options: { hint: "AUTO — omit from data" }
 
       - name: seating_capacity
         selector: "#seatingCapacity"
-        type: select
-        required: true
-        status: needs_capture
-
-      - name: year_of_manufacture
-        selector: "#yearOfManufacture"
-        type: select
-        required: true
-        status: needs_capture
-
-      - name: place_of_use
-        selector: "#placeOfUse"
         type: text
         required: true
-        options: { autocomplete: true, autocomplete_option: "mat-option" }
-        status: needs_capture
+
+      - name: year_manufacture
+        selector: "#yearManufacture"
+        type: text
+        required: false
+        options: { hint: "AUTO from vehicle lookup — omit from data" }
 
       - name: market_value
         selector: "#marketValue"
         type: text
-        required: true
-        status: needs_capture
+        required: false
+        options: { hint: "filled via 'Check market value' button (disabled until then)" }
 
       - name: nvic
         selector: "#nvic"
         type: text
-        required: true
-        status: needs_capture
+        required: false
+        options: { hint: "AUTO (NVIC code) — omit from data" }
 
-      - name: ncd_transfer_from
-        selector: "#ncdTransferFrom"
+      - name: ncd_transfer
+        selector: "#ncdTransfer"
         type: text
         required: false
-        status: needs_capture
+        options: { hint: "pre-filled with vehicle number; NCD transfer from previous plate" }
 
       - name: ncd_percent
-        selector: "#ncdPercent"
-        type: select
-        required: true
-        options: { hint: "0 / 25 / 30 / 38.33 / 45 / 55" }
-        status: needs_capture
-
-      - name: cue_code
-        selector: "#cueCode"
+        selector: "#ncd_Per"
         type: text
         required: false
-        status: needs_capture
+        options: { hint: "filled via 'Check NCD' button (disabled until then)" }
 
-      - name: cue_value
-        selector: "#cueValue"
+      - name: number_claims
+        selector: "#number_Claims"
         type: text
         required: false
-        status: needs_capture
-
-      - name: claims_past_2_yrs
-        selector: "#claimsPast2Yrs"
-        type: select
-        required: true
-        options: { hint: "0 / 1 / 2+ claims" }
-        status: needs_capture
-
-      - name: period_of_insurance
-        selector: "#periodOfInsurance"
-        type: select
-        required: true
-        status: needs_capture
+        options: { hint: "AUTO/disabled — omit from data" }
 
       - name: coverage_duration
         selector: "#coverageDuration"
-        type: select
-        required: true
-        status: needs_capture
+        type: text
+        required: false
+        options: { hint: "AUTO (12 months) — omit from data" }
 
-  - name: additional
-    description: "Step 2 — additional covers (anti-theft, named drivers)"
-    submit: "button:has-text('Next')"
-    fields:
       - name: anti_theft_device
         selector: "#antiTheftDevice"
-        type: checkbox
+        type: text
         required: false
-        status: needs_capture
+        options: { autocomplete: true, autocomplete_option: "mat-option" }
 
       - name: safety_feature
         selector: "#safetyFeature"
-        type: checkbox
+        type: text
         required: false
-        status: needs_capture
+        options: { autocomplete: true, autocomplete_option: "mat-option", hint: "ABS & Airbags (more than 2) / ABS (No Airbags)..." }
 
       - name: garage
         selector: "#garage"
-        type: select
+        type: text
         required: false
-        status: needs_capture
+        options: { autocomplete: true, autocomplete_option: "mat-option" }
 
       - name: hire_purchase
-        selector: "#hirePurchase"
+        selector: "input[name='radioBasic']"
         type: radio
         required: true
-        options: { values: ["Yes", "No"] }
-        status: needs_capture
+        options: { values: ["Y", "N"], hint: "Is vehicle financed under hire purchase? (radios btn_0/btn_1, same name=radioBasic)" }
 
-      - name: named_drivers
-        selector: "#namedDrivers"
-        type: select
+  - name: drivers
+    description: "Step 2d — additional named driver(s) (same page)"
+    submit: "button:has-text('Continue')"
+    fields:
+      - name: all_drivers_cover
+        selector: "#mat-checkbox-2-input"
+        type: checkbox
         required: false
-        options: { hint: "2 free / 3rd +RM10 / All Driver +RM20" }
+        options: { hint: "Optional cover: All Drivers +MYR 20.00" }
+
+      # Named driver rows appear after clicking "Add driver" (button:has-text('Add driver'))
+      # Fields use insured_*_0 / insured_*_1 naming; selectors not yet captured.
+      - name: named_driver_1
+        selector: "#insured_fullName_0"
+        type: text
+        required: false
         status: needs_capture

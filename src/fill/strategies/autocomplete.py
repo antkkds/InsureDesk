@@ -78,11 +78,15 @@ class AutocompleteStrategy(FillStrategy):
         option_sel = field.options.get("autocomplete_option", "mat-option")
         found = await self._wait_for_selector(browser, option_sel, timeout=field.timeout)
         if not found:
-            raise FieldNotFoundError(
-                message=f"Autocomplete '{field.name}': no '{option_sel}' appeared after typing",
-                field=field.name,
-                selector=field.selector,
-            )
+            # Fallback: some Angular autocompletes don't open a panel when the
+            # typed value already matches (or the panel is slow to load first
+            # time). Re-focus via JS + re-dispatch input. If a panel appears,
+            # click the option; otherwise accept when the read-back value
+            # matches (string-valued autocompletes store option text as value).
+            await self._retry_panel(browser, field, option_sel, value_str)
+            if field.verify:
+                await self._verify(browser, field, value_str)
+            return True
 
         # 4. Native click the matching option (JS click does NOT update Angular)
         await self._click_option(browser, field, option_sel, value_str)
@@ -112,6 +116,38 @@ class AutocompleteStrategy(FillStrategy):
                 field=field.name,
                 selector=field.selector,
             )
+
+    async def _retry_panel(
+        self,
+        browser,
+        field: FieldDefinition,
+        option_sel: str,
+        value_str: str,
+    ) -> None:
+        """JS re-focus + re-dispatch input to coax the autocomplete panel open.
+
+        If a panel appears, click the matching option. If it never appears,
+        the caller accepts the read-back value (string-valued autocompletes
+        store the option text directly as the model value).
+        """
+        for _ in range(2):
+            try:
+                await browser.evaluate(
+                    f"""(() => {{
+                        const el = document.querySelector({field.selector!r});
+                        if (!el) return false;
+                        el.focus();
+                        el.dispatchEvent(new Event('input', {{bubbles: true}}));
+                        el.dispatchEvent(new KeyboardEvent('keyup', {{bubbles: true, key: 'a'}}));
+                        return true;
+                    }})()"""
+                )
+            except Exception:
+                pass
+            found = await self._wait_for_selector(browser, option_sel, timeout=3000)
+            if found:
+                await self._click_option(browser, field, option_sel, value_str)
+                return
 
     async def _click_option(
         self,

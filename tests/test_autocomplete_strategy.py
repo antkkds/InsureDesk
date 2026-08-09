@@ -56,8 +56,10 @@ class MockAutocompleteBrowser(MockBrowser):
         return None
 
     async def click(self, selector: str, timeout: int = 10000) -> bool:
-        # Native click path — record the text selector used
-        if ":has-text(" in selector:
+        # Native click path — record the text selector used (mat-option only;
+        # other :has-text selectors e.g. mat-checkbox:has-text(...) fall through
+        # to the generic MockBrowser click so checkbox state toggles)
+        if ":has-text(" in selector and "mat-option" in selector:
             import re
             m = re.search(r':has-text\("([^"]+)"\)', selector)
             text = m.group(1) if m else "?"
@@ -75,7 +77,9 @@ class MockAutocompleteBrowser(MockBrowser):
 
     async def fill(self, selector: str, value: str, delay_ms: int = 50) -> bool:
         self._last_typed_input = selector
-        return await super().fill(selector, value, delay_ms)
+        if getattr(self, "fill_writes_values", True):
+            return await super().fill(selector, value, delay_ms)
+        return selector in self.selectors_found
 
 
 def _field(name: str, selector: str, **opts) -> FieldDefinition:
@@ -135,13 +139,27 @@ class TestAutocompleteStrategy:
             await AutocompleteStrategy().fill(browser, field, "USED")
 
     @pytest.mark.asyncio
-    async def test_no_options_appear_raises(self):
+    async def test_no_options_but_readback_matches_accepts(self):
         browser = MockAutocompleteBrowser()
         browser.register_selector("#condition", found=True, visible=True)
-        # no options registered → wait_for_selector("mat-option") False
+        # no options registered → wait_for_selector("mat-option") False;
+        # fallback: read-back value matches → accepted (string autocomplete)
+        browser.values["#condition"] = "USED"
 
         field = _field("condition", "#condition")
-        with pytest.raises(FieldNotFoundError):
+        assert await AutocompleteStrategy().fill(browser, field, "USED") is True
+
+    @pytest.mark.asyncio
+    async def test_no_options_and_readback_mismatch_raises(self):
+        browser = MockAutocompleteBrowser()
+        browser.register_selector("#condition", found=True, visible=True)
+        # no options registered; fill does NOT update the model (portal
+        # rejected the typed value) → read-back mismatch → verification fails
+        browser.fill_writes_values = False
+        browser.values["#condition"] = "WRONG"
+
+        field = _field("condition", "#condition")
+        with pytest.raises(FillVerificationError):
             await AutocompleteStrategy().fill(browser, field, "USED")
 
     @pytest.mark.asyncio

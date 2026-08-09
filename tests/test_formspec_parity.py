@@ -24,64 +24,41 @@ FORMS_DIR = os.path.join(os.path.dirname(__file__), "..", "src", "portal", "form
 MOTOR_YAML = os.path.join(FORMS_DIR, "motor_private_car.yaml")
 
 # Sample business data for a private car quote (same shape used in production)
+# NOTE: field names follow the LIVE-CAPTURED YAML v2 structure
+# (owner/address/vehicle/drivers). Auto-populated fields (dob, nationality,
+# chassis, engine, make, model, marketValue...) are intentionally OMITTED —
+# the portal fills them from NRIC/vehicle lookup.
 SAMPLE_DATA = {
     # quotation_details (confirmed selectors)
     "applicant_type": "individual",
-    "condition": "USED",
+    "condition": "REGISTERED",
     "id_type": "NRIC",
-    "id_number": "881212-14-5678",
+    "id_number": "881212145678",
     "sst_number": None,          # optional
     "vehicle_number": "wqk 1234",
-    "place": "Kuala Lumpur",
+    "place": "KUALA LUMPUR",
     # owner
-    "owner_id_number": "881212-14-5678",
     "salutation": "Mr",
-    "owner_fullname": "Fionn Liang",
-    "gender": "Male",
-    "owner_dob": "12 DEC 1988",
-    "nationality": "Malaysia",
+    "fullname": "Fionn Liang",
+    "gender": "M",               # radio values are M/F (NOT Male/Female)
     "marital_status": "Single",
-    "years_driving_exp": "10",
+    "years_driving_exp": "5",
     "mobile": "0123456789",
     "home_phone": None,
     "email": "fionn@example.com",
-    "pds_dpn_consent": True,
-    "postcode": "50400",
-    "state": "Wilayah Persekutuan",
-    "country": "Malaysia",
+    "pds_consent": True,
+    # address
+    "postcode": "50000",
+    "state": "KUALA LUMPUR",
     "address1": "12, Jalan Merdeka",
     "address2": "Taman Desa",
-    "address3": None,
-    "address4": None,
     # vehicle
-    "vehicle_number": "WQK 1234",
-    "vehicle_indicator": "Private",
-    "coverage_type": "Comprehensive",
-    "body_type": "Sedan",
-    "chassis_no": "ABCDEF12345678901",
-    "engine_no": "ENG987654",
-    "engine_capacity": "1500",
-    "make": "Toyota",
-    "model": "Vios",
-    "use_of_vehicle": "Private",
+    "body_type": "SEDAN",
     "seating_capacity": "5",
-    "year_of_manufacture": "2019",
-    "place_of_use": "Kuala Lumpur",
-    "market_value": "60000",
-    "nvic": "NVIC123456",
-    "ncd_transfer_from": None,
-    "ncd_percent": "55",
-    "cue_code": None,
-    "cue_value": None,
-    "claims_past_2_yrs": "0",
-    "period_of_insurance": "12 months",
-    "coverage_duration": "Annual",
-    # additional
-    "anti_theft_device": True,
-    "safety_feature": False,
-    "garage": "Private garage",
-    "hire_purchase": "No",
-    "named_drivers": "2",
+    "safety_feature": "ABS & Airbags (more than 2)",
+    "hire_purchase": "N",        # radio values are Y/N (btn_0/btn_1)
+    # drivers
+    "all_drivers_cover": False,
 }
 
 
@@ -111,21 +88,28 @@ def _register_form_fields(browser: MockBrowser, schema: FillSchema) -> None:
         elif fd.type == FieldType.TEXT and fd.options.get("autocomplete"):
             # Simulate Angular mat-option panel for autocomplete fields
             if hasattr(browser, "register_options"):
-                hint = fd.options.get("hint", "")
                 name = fd.name
-                if name == "nationality" or name == "country":
+                if name in ("salutation",):
+                    browser.register_options(fd.selector, ["Mr", "Ms", "Madam"])
+                elif name == "marital_status":
+                    browser.register_options(fd.selector, ["Married", "Single"])
+                elif name in ("nationality", "country"):
                     browser.register_options(fd.selector, ["Malaysia", "Singapore"])
                 elif name == "state":
-                    browser.register_options(fd.selector, ["Wilayah Persekutuan", "Selangor"])
+                    browser.register_options(fd.selector, ["KUALA LUMPUR", "SELANGOR"])
+                elif name == "place":
+                    browser.register_options(fd.selector, ["KUALA LUMPUR", "SELANGOR"])
+                elif name == "body_type":
+                    browser.register_options(fd.selector, ["SEDAN", "SALOON", "SUV"])
+                elif name == "safety_feature":
+                    browser.register_options(fd.selector, ["ABS & Airbags (more than 2)", "ABS (No Airbags)"])
                 elif name == "make":
                     browser.register_options(fd.selector, ["Toyota", "Honda", "Perodua"])
                 elif name == "model":
                     browser.register_options(fd.selector, ["Vios", "City", "Myvi"])
-                elif name == "place_of_use":
-                    browser.register_options(fd.selector, ["Kuala Lumpur", "Selangor", "Penang"])
-                elif "REGISTERED" in hint:
-                    browser.register_options(fd.selector, ["NEW REGISTERED", "USED"])
-                elif "NRIC" in hint:
+                elif "REGISTERED" in fd.options.get("hint", ""):
+                    browser.register_options(fd.selector, ["NEW REGISTERED", "REGISTERED"])
+                elif "NRIC" in fd.options.get("hint", ""):
                     browser.register_options(fd.selector, ["NRIC", "Passport"])
                 else:
                     browser.register_options(fd.selector, ["Kuala Lumpur", "Selangor"])
