@@ -1,0 +1,377 @@
+# GEARS — Private Motor Insurance (Private Car) FormSpec
+# Source: gears_research/products_map.md — Motor Insurance section (2026-08)
+# Flow:  Quotation Details → Details (Owner/Vehicle/Additional) → Sum Insured/Add-on → Payment
+# Entry: introduce/product-list?id=PMOT → hover .item_product → Get quote
+#
+# ⚠️ Selector status:
+#   Step 1 (quotation_details): ids CONFIRMED by live exploration (#condition, #idType, ...)
+#   Step 2+ (owner/vehicle/additional): ids inferred from Angular id-naming pattern,
+#        marked "needs_capture" — to be calibrated by capture pass before live run.
+#   Angular id-locating is the most reliable (label matching misaligns).
+
+product_id: "PMOT"
+product_name: "Private Motor Insurance (Private Car)"
+portal: "great_eastern_gears"
+version: "1.0"
+entry_url: "/MY/AgencySales/quotations/introduce"
+
+sections:
+  - name: quotation_details
+    description: "Step 1 — applicant type & vehicle identifiers"
+    submit: "button:has-text('Next')"
+    fields:
+      - name: applicant_type
+        selector: "input[name='applicantType'][value='Individual']"
+        type: radio
+        required: true
+        options: { values: ["Individual", "Corporate"] }
+
+      # autocomplete: initially disabled → driver must removeAttribute('disabled')
+      # then fill + native click mat-option (JS el.click() does NOT update Angular model)
+      - name: condition
+        selector: "#condition"
+        type: text
+        required: true
+        options:
+          autocomplete: true
+          autocomplete_option: "mat-option"
+          hint: "NEW REGISTERED / USED — removeAttribute('disabled') first"
+
+      - name: id_type
+        selector: "#idType"
+        type: text
+        required: true
+        options:
+          autocomplete: true
+          autocomplete_option: "mat-option"
+          hint: "NRIC / Passport"
+
+      - name: id_number
+        selector: "#idNumber"
+        type: text
+        required: true
+
+      - name: sst_number
+        selector: "#sstNumber"
+        type: text
+        required: false
+
+      - name: vehicle_number
+        selector: "#vehicleNumber"
+        type: text
+        required: true
+        transform: uppercase
+
+      - name: place
+        selector: "#place"
+        type: text
+        required: true
+        options:
+          autocomplete: true
+          autocomplete_option: "mat-option"
+          hint: "State (autocomplete)"
+
+  - name: owner
+    description: "Step 2 — proposer / owner details"
+    submit: "button:has-text('Next')"
+    fields:
+      - name: owner_id_number
+        selector: "#ownerIdNumber"
+        type: text
+        required: true
+        status: needs_capture
+
+      - name: salutation
+        selector: "#salutation"
+        type: select
+        required: true
+        status: needs_capture
+
+      - name: owner_fullname
+        selector: "#ownerFullName"
+        type: text
+        required: true
+        status: needs_capture
+
+      - name: gender
+        selector: "input[name='gender'][value='Male']"
+        type: radio
+        required: true
+        options: { values: ["Male", "Female"] }
+        status: needs_capture
+
+      - name: owner_dob
+        selector: "#ownerDob"
+        type: date
+        required: true
+        format: "%d %b %Y"
+        options: { hint: "bsdatepicker — type '01 JAN 1990' directly" }
+        status: needs_capture
+
+      - name: nationality
+        selector: "#nationality"
+        type: text
+        required: true
+        options: { autocomplete: true, autocomplete_option: "mat-option" }
+        status: needs_capture
+
+      - name: marital_status
+        selector: "#maritalStatus"
+        type: select
+        required: true
+        status: needs_capture
+
+      - name: years_driving_exp
+        selector: "#yearsDrivingExp"
+        type: text
+        required: true
+        status: needs_capture
+
+      - name: mobile
+        selector: "#mobile"
+        type: text
+        required: true
+        status: needs_capture
+
+      - name: home_phone
+        selector: "#homePhone"
+        type: text
+        required: false
+        status: needs_capture
+
+      - name: email
+        selector: "#email"
+        type: text
+        required: true
+        status: needs_capture
+
+      - name: pds_dpn_consent
+        selector: "#pdsDpnConsent"
+        type: checkbox
+        required: true
+        status: needs_capture
+
+      - name: postcode
+        selector: "#postcode"
+        type: text
+        required: true
+        status: needs_capture
+
+      - name: state
+        selector: "#state"
+        type: text
+        required: true
+        options: { autocomplete: true, autocomplete_option: "mat-option" }
+        status: needs_capture
+
+      - name: country
+        selector: "#country"
+        type: text
+        required: true
+        options: { autocomplete: true, autocomplete_option: "mat-option" }
+        status: needs_capture
+
+      - name: address1
+        selector: "#address1"
+        type: text
+        required: true
+        status: needs_capture
+
+      - name: address2
+        selector: "#address2"
+        type: text
+        required: false
+        status: needs_capture
+
+      - name: address3
+        selector: "#address3"
+        type: text
+        required: false
+        status: needs_capture
+
+      - name: address4
+        selector: "#address4"
+        type: text
+        required: false
+        status: needs_capture
+
+  - name: vehicle
+    description: "Step 2 — vehicle details (same page, after owner)"
+    submit: "button:has-text('Next')"
+    fields:
+      - name: vehicle_number
+        selector: "#vehicleNumber"
+        type: text
+        required: true
+        transform: uppercase
+        status: needs_capture
+
+      - name: vehicle_indicator
+        selector: "#vehicleIndicator"
+        type: select
+        required: true
+        status: needs_capture
+
+      - name: coverage_type
+        selector: "#coverageType"
+        type: select
+        required: true
+        options: { hint: "Comprehensive / Third Party etc." }
+        status: needs_capture
+
+      - name: body_type
+        selector: "#bodyType"
+        type: select
+        required: true
+        status: needs_capture
+
+      - name: chassis_no
+        selector: "#chassisNo"
+        type: text
+        required: true
+        transform: uppercase
+        status: needs_capture
+
+      - name: engine_no
+        selector: "#engineNo"
+        type: text
+        required: true
+        transform: uppercase
+        status: needs_capture
+
+      - name: engine_capacity
+        selector: "#engineCapacity"
+        type: text
+        required: true
+        status: needs_capture
+
+      - name: make
+        selector: "#make"
+        type: text
+        required: true
+        options: { autocomplete: true, autocomplete_option: "mat-option" }
+        status: needs_capture
+
+      - name: model
+        selector: "#model"
+        type: text
+        required: true
+        options: { autocomplete: true, autocomplete_option: "mat-option" }
+        status: needs_capture
+
+      - name: use_of_vehicle
+        selector: "#useOfVehicle"
+        type: select
+        required: true
+        status: needs_capture
+
+      - name: seating_capacity
+        selector: "#seatingCapacity"
+        type: select
+        required: true
+        status: needs_capture
+
+      - name: year_of_manufacture
+        selector: "#yearOfManufacture"
+        type: select
+        required: true
+        status: needs_capture
+
+      - name: place_of_use
+        selector: "#placeOfUse"
+        type: text
+        required: true
+        options: { autocomplete: true, autocomplete_option: "mat-option" }
+        status: needs_capture
+
+      - name: market_value
+        selector: "#marketValue"
+        type: text
+        required: true
+        status: needs_capture
+
+      - name: nvic
+        selector: "#nvic"
+        type: text
+        required: true
+        status: needs_capture
+
+      - name: ncd_transfer_from
+        selector: "#ncdTransferFrom"
+        type: text
+        required: false
+        status: needs_capture
+
+      - name: ncd_percent
+        selector: "#ncdPercent"
+        type: select
+        required: true
+        options: { hint: "0 / 25 / 30 / 38.33 / 45 / 55" }
+        status: needs_capture
+
+      - name: cue_code
+        selector: "#cueCode"
+        type: text
+        required: false
+        status: needs_capture
+
+      - name: cue_value
+        selector: "#cueValue"
+        type: text
+        required: false
+        status: needs_capture
+
+      - name: claims_past_2_yrs
+        selector: "#claimsPast2Yrs"
+        type: select
+        required: true
+        options: { hint: "0 / 1 / 2+ claims" }
+        status: needs_capture
+
+      - name: period_of_insurance
+        selector: "#periodOfInsurance"
+        type: select
+        required: true
+        status: needs_capture
+
+      - name: coverage_duration
+        selector: "#coverageDuration"
+        type: select
+        required: true
+        status: needs_capture
+
+  - name: additional
+    description: "Step 2 — additional covers (anti-theft, named drivers)"
+    submit: "button:has-text('Next')"
+    fields:
+      - name: anti_theft_device
+        selector: "#antiTheftDevice"
+        type: checkbox
+        required: false
+        status: needs_capture
+
+      - name: safety_feature
+        selector: "#safetyFeature"
+        type: checkbox
+        required: false
+        status: needs_capture
+
+      - name: garage
+        selector: "#garage"
+        type: select
+        required: false
+        status: needs_capture
+
+      - name: hire_purchase
+        selector: "#hirePurchase"
+        type: radio
+        required: true
+        options: { values: ["Yes", "No"] }
+        status: needs_capture
+
+      - name: named_drivers
+        selector: "#namedDrivers"
+        type: select
+        required: false
+        options: { hint: "2 free / 3rd +RM10 / All Driver +RM20" }
+        status: needs_capture

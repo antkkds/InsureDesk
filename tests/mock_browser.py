@@ -20,6 +20,16 @@ class MockBrowser:
         self.visible_selectors: set[str] = set()
         self.values: dict[str, str] = {}
         self.wait_selector_results: dict[str, bool] = {}
+        self.navigated: list[str] = []
+
+    async def navigate(self, url: str) -> bool:
+        """Record navigation (PortalDriver protocol compatibility)."""
+        self.navigated.append(url)
+        return True
+
+    async def fill_text(self, selector: str, value: str) -> bool:
+        """Alias for fill (PortalDriver protocol method name)."""
+        return await self.fill(selector, value)
 
     def register_selector(self, selector: str, found: bool = True, visible: bool = True):
         """Register a selector as existing on the page."""

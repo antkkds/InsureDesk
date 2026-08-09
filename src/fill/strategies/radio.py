@@ -27,8 +27,12 @@ class RadioStrategy(FillStrategy):
         value_str = str(value)
 
         # Build radio selector — options can provide value->selector mapping
+        #   dict:  {"values": {"M": "#gender_male"}}      → explicit selectors
+        #   list:  {"values": ["Male", "Female"]}         → selector[value="X"]
         value_map = field.options.get("values", {})
-        if value_str in value_map:
+        if isinstance(value_map, list):
+            radio_selector = f"{field.selector}[value=\"{value_str}\"]"
+        elif value_str in value_map:
             radio_selector = value_map[value_str]
         else:
             # Try to find radio by value attribute
