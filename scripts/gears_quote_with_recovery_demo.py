@@ -1,14 +1,15 @@
-"""Demo: run a GEARS quote step with session-expiry auto-recovery + Save.
+"""Demo: run a GEARS quote step with session-expiry auto-recovery + Save + Send.
 
 Shows the intended integration pattern for the quote pipeline:
     ensure_gears_session()          once at task start
     with_session_recovery(...)      wrap EVERY long-running step
     GearsQuoteSaver.save_as_draft() structured save with PUT-level proof
+    GearsQuoteSender.send_application() structured send with POST-level proof
 
 If the GEARS session dies mid-step (forcelogout / token expiry), the guard
 re-logins via GEGLink SSO and re-runs the step — the task continues instead
-of dying. Save returns a structured outcome (docName/version/status), not a
-UI-toast guess.
+of dying. Save/Send return structured outcomes (docName/version/status),
+not a UI-toast guess.
 
 Run:  python3 gears_quote_with_recovery_demo.py
 """
@@ -27,6 +28,7 @@ from gears_session_guard import (
 
 sys.path.insert(0, "/home/antkk/InsureDesk")
 from src.quote.gears_save import GearsQuoteSaver
+from src.quote.gears_send import GearsQuoteSender
 
 # A saved draft quote from the verification run (TEST123 / FIONN LIANG)
 QUOTE_URL = ("https://gears-my.greateasterngeneral.com/MY/AgencySales/"
@@ -75,6 +77,15 @@ async def main():
         print("=== SAVE OUTCOME ===")
         print(json.dumps(outcome.to_dict(), ensure_ascii=False, indent=1))
         print("SAVE OK:", outcome.ok)
+
+        # 4. Send application — structured outcome (POST-level proof).
+        # quote_url makes Send self-contained: after Save the app is on the
+        # dashboard, so the sender navigates back to the quote itself.
+        sender = GearsQuoteSender(page)
+        send_out = await sender.send_application(quote_url=QUOTE_URL)
+        print("=== SEND OUTCOME ===")
+        print(json.dumps(send_out.to_dict(), ensure_ascii=False, indent=1))
+        print("SEND OK:", send_out.ok)
         await browser.close()
 
 
