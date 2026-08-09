@@ -97,6 +97,16 @@ class QuoteCapabilityHandler(CapabilityHandler):
                         # the tool-not-found error clearly.
                         pass
             tool_name = "calculate_quote" if registry.has_tool("calculate_quote") else "create_quote"
+            if mode == "simulation":
+                # Simulation mode must NOT touch the real portal executor;
+                # always use the mock create_quote pipeline.
+                if not registry.has_tool("create_quote"):
+                    try:
+                        from src.tools.insurance.quote_tools import CreateQuote
+                        registry.register(CreateQuote())
+                    except ImportError:
+                        pass
+                tool_name = "create_quote"
             if tool_name == "calculate_quote":
                 # Real portal execution needs a browser engine. If the tool
                 # registry has no context, lazily create one (Chrome CDP).

@@ -2,13 +2,9 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
-dist/
-build/
-.eggs/
-
-# Virtual environment
-venv/
+*.egg
 .venv/
+venv/
 env/
 
 # IDE
@@ -21,14 +17,30 @@ env/
 .DS_Store
 Thumbs.db
 
-# Project
+# Hermes / debug / scratch
+.hermes_temp/
+_*.ps1
+_*.py
+_*.json
+
+# Local state / DB
+*.local.yaml
+credentials.yaml
+*.log
 *.db
-*.sqlite3
-.insuredesk/
-.key
 
-# pytest
-.pytest_cache/
+# Local dev scripts
+run_bridge.py
+capture_mode.py
 
-# Node
-node_modules/
+# Generated
+src/bridge/
+dist/
+
+# Build artifacts
+build/pyinstaller/
+*.exe
+*.msi
+
+# Runtime data
+data/

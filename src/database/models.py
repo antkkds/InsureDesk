@@ -94,6 +94,39 @@ class Company(Base):
     last_sync = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=_now)
 
+    portals = relationship("Portal", back_populates="company", cascade="all, delete-orphan")
+
+
+# ── Portal (Agent Login Entry) ────────────────────────────────────
+
+class Portal(Base):
+    """Agent portal login entry for a company.
+
+    A company can have multiple portals (GEGLink, Claims Portal, ...).
+    MVP: each company gets one default portal created automatically.
+    Automation always targets a Portal, not a Company.
+
+    profile_state:
+        READY        — has YAML automation profile
+        CAPTURING    — Capture Mode in progress
+        UNCONFIGURED — only login_url, no profile yet
+        FAILED       — profile/capture failed
+    """
+    __tablename__ = "portals"
+
+    id = Column(String(36), primary_key=True, default=_uuid)
+    company_id = Column(String(36), ForeignKey("companies.id"), nullable=False, index=True)
+    name = Column(String(200), default="Agent Portal")
+    login_url = Column(String(500), nullable=True)
+    base_url = Column(String(500), nullable=True)
+    profile_path = Column(String(500), nullable=True)
+    profile_state = Column(String(20), default="UNCONFIGURED")
+    is_default = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=_now)
+    updated_at = Column(DateTime, default=_now, onupdate=_now)
+
+    company = relationship("Company", back_populates="portals")
+
 
 # ── Policy Parse Record (UIP-AI parsed policy data) ──────────────
 

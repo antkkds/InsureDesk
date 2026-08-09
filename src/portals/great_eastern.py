@@ -58,10 +58,11 @@ class GEGLinkAdapter(PortalAdapter):
 
     def __init__(self, mapping: Optional[PortalMapping] = None,
                  engine: Optional[BrowserEngine] = None,
-                 mode: SessionMode = SessionMode.READ_WRITE):
+                 mode: SessionMode = SessionMode.READ_WRITE,
+                 login_url: Optional[str] = None):
         if mapping is None:
             mapping = load_portal_mapping("great_eastern")
-        super().__init__(mapping, engine, mode)
+        super().__init__(mapping, engine, mode, login_url)
 
     @property
     def adapter_name(self) -> str:
@@ -373,3 +374,9 @@ class GEGLinkAdapter(PortalAdapter):
                                       "domain": domain, "path": path})
         except Exception:
             pass
+
+
+# ── Backward-compat alias ──────────────────────────────────────
+# Remote tests/callers reference GreatEasternAdapter; the concrete
+# implementation class is GEGLinkAdapter.
+GreatEasternAdapter = GEGLinkAdapter

@@ -1,83 +1,53 @@
-"""InsureDesk — Tool Base Class.
+"""InsureDesk Tools — ToolBase abstract interface.
 
-All tools inherit from ToolBase and implement:
-- name: str (unique identifier)
-- description: str (for LLM routing)
-- parameters: dict (JSON Schema)
-- execute(**kwargs) -> ToolResult
+Every tool in InsureDesk implements this interface.
+Tools are registered in ToolRegistry and executed via BridgeServer.
+
+Architecture:
+    UIP-AI Cloud → BridgeServer → ToolRegistry → ToolBase.execute()
+                                                        |
+                                                        v
+                                              ToolExecutionResult
+                                                        |
+                                                        v
+                                              BridgeResponse (conversion)
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from typing import Any, Dict, Optional
-from datetime import datetime
 
-
-@dataclass
-class ToolResult:
-    """Standard result from a tool execution."""
-    success: bool
-    data: Any = None
-    error: Optional[str] = None
-    duration_ms: float = 0.0
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
-
-    def to_dict(self) -> dict:
-        return {
-            "success": self.success,
-            "data": self.data,
-            "error": self.error,
-            "duration_ms": round(self.duration_ms, 2),
-            "timestamp": self.timestamp,
-        }
+from src.tools.models import ToolExecutionResult
 
 
 class ToolBase(ABC):
-    """Base class for all callable tools."""
+    """Abstract base class for all InsureDesk tools.
 
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Unique tool name (snake_case)."""
-        ...
+    Each tool is a self-contained executable action.
+    Tools are stateless — all state lives in the context.
 
-    @property
-    @abstractmethod
-    def description(self) -> str:
-        """Natural language description for LLM routing."""
-        ...
+    Attributes:
+        name: Unique tool identifier (e.g. 'calculate_quote')
+        description: Human-readable description for discovery
+    """
 
-    @property
-    def parameters(self) -> dict:
-        """JSON Schema for expected arguments.
-
-        Override in subclass to define parameter schema.
-        Default: empty object (no parameters).
-        """
-        return {
-            "type": "object",
-            "properties": {},
-            "required": [],
-        }
+    name: str = ""
+    description: str = ""
 
     @abstractmethod
-    async def execute(self, **kwargs) -> ToolResult:
-        """Execute the tool with given parameters.
+    async def execute(
+        self,
+        arguments: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None,
+    ) -> ToolExecutionResult:
+        """Execute the tool with given arguments.
 
         Args:
-            **kwargs: Parameters matching the JSON schema.
+            arguments: Tool-specific parameters from the caller.
+            context: Optional shared context (session, credentials, browser).
 
         Returns:
-            ToolResult with success/data/error.
+            ToolExecutionResult with success/data or error/error_code.
         """
         ...
-
-    def to_definition(self) -> dict:
-        """Return tool definition for LLM function calling."""
-        return {
-            "name": self.name,
-            "description": self.description,
-            "parameters": self.parameters,
-        }

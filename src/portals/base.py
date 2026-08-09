@@ -14,7 +14,11 @@ from enum import Enum
 from src.portal.mapping import load_portal_mapping, get_selector, list_available_portals, PortalMapping
 from src.portal.form_engine import FormEngine
 from src.portal.session import SessionManager
+from src.portal.navigation import NavigationEngine
 from src.browser.driver import BrowserEngine
+from src.fill.engine import FillEngine
+from src.fill.schema import FillSchema, schemas_from_yaml
+from src.fill.transformer import TransformerRegistry
 
 
 class SessionMode(Enum):
@@ -52,14 +56,21 @@ class PortalAdapter(ABC):
 
     def __init__(self, mapping: Optional[PortalMapping] = None,
                  engine: Optional[BrowserEngine] = None,
-                 mode: SessionMode = SessionMode.READ_WRITE):
+                 mode: SessionMode = SessionMode.READ_WRITE,
+                 login_url: Optional[str] = None):
         # Auto-load mapping from adapter_name if not provided
         if mapping is None:
             mapping = load_portal_mapping(self.adapter_name)
         self.mapping = mapping
         self._engine = engine
+        # DB Portal.login_url override (higher priority than YAML)
+        self._login_url = login_url
         self.form = FormEngine(engine)
         self.session = SessionManager()
+        self.nav = NavigationEngine(self)
+        self._fill: Optional[FillEngine] = None
+        self._fill_schemas: dict[str, FillSchema] = {}
+        self._transformers: Optional[TransformerRegistry] = None
         self._logged_in = False
         self._mode = mode
 
@@ -101,7 +112,12 @@ class PortalAdapter(ABC):
 
     @property
     def start_url(self) -> str:
-        """URL to navigate to when starting this portal."""
+        """URL to navigate to when starting this portal.
+
+        Priority: DB Portal.login_url → YAML login_url → YAML base_url.
+        """
+        if self._login_url:
+            return self._login_url
         if self.mapping and self.mapping.login_url:
             return self.mapping.login_url
         if self.mapping and self.mapping.base_url:
@@ -133,6 +149,42 @@ class PortalAdapter(ABC):
                         return sel
 
         return ""
+
+    async def navigate(self, route_name: str) -> bool:
+        """Navigate to a logical route (delegates to NavigationEngine)."""
+        return await self.nav.navigate(route_name)
+
+    # ── Fill Engine (Phase 4.2) ──
+
+    @property
+    def fill(self) -> FillEngine:
+        """Lazy-initialized FillEngine for this portal."""
+        if self._fill is None:
+            self._init_fill()
+        return self._fill
+
+    @property
+    def fill_schemas(self) -> dict[str, FillSchema]:
+        """Lazy-loaded fill schemas from YAML mapping."""
+        if not self._fill_schemas and self.mapping and self.mapping.schemas:
+            # self.mapping.schemas is raw YAML dict, need to parse
+            for section_name, section_data in self.mapping.schemas.items():
+                if isinstance(section_data, dict):
+                    from src.fill.schema import fill_schema_from_dict
+                    self._fill_schemas[section_name] = fill_schema_from_dict(
+                        section_name, section_data
+                    )
+        return self._fill_schemas
+
+    def _init_fill(self):
+        """Initialize the FillEngine and its dependencies."""
+        # Create transformer registry from YAML
+        transformers = TransformerRegistry()
+        if self.mapping and self.mapping.transformers:
+            transformers.register_from_yaml(self.mapping.transformers)
+
+        self._transformers = transformers
+        self._fill = FillEngine(transformer_registry=transformers)
 
     # ── Connection ──
 
@@ -314,15 +366,165 @@ class PortalAdapter(ABC):
             return True
         return False
 
+    # ── Sprint 5.1: Generic Operations ──
+
+    async def execute_action(self, action_type: str,
+                              params: Optional[Dict[str, Any]] = None) -> Any:
+        """Execute a named action with params.
+
+        Dispatches to the appropriate domain method.
+        Supported actions: search_policy, get_policy_details, submit_claim,
+        renew_policy, upload_document, navigate, login, logout, health_check,
+        extract_data, recover_session.
+
+        Args:
+            action_type: Name of the action to execute.
+            params: Action-specific parameters.
+
+        Returns:
+            Action result (type depends on action).
+        """
+        params = params or {}
+        dispatch = {
+            "search_policy": lambda: self.search_policy(
+                params.get("policy_no", "")
+            ),
+            "get_policy_details": lambda: self.get_policy_details(),
+            "submit_claim": lambda: self.submit_claim(
+                params.get("claim_data", {})
+            ),
+            "renew_policy": lambda: self.renew_policy(),
+            "upload_document": lambda: self.upload_document(
+                params.get("file_path", ""),
+                params.get("doc_type", ""),
+            ),
+            "navigate": lambda: self.navigate(
+                params.get("route_name", "")
+            ),
+            "login": lambda: self.login(
+                PortalCredentials(
+                    username=params.get("username", ""),
+                    password=params.get("password", ""),
+                )
+            ),
+            "logout": lambda: self.logout(),
+            "health_check": lambda: self.health_check(),
+            "extract_data": lambda: self.extract_data(
+                params.get("data_type", "policy_details")
+            ),
+            "recover_session": lambda: self.recover_session(),
+        }
+        handler = dispatch.get(action_type)
+        if handler is None:
+            raise ValueError(
+                f"Unknown action: {action_type}. "
+                f"Supported: {', '.join(sorted(dispatch.keys()))}"
+            )
+        return await handler()
+
+    async def extract_data(self, data_type: str = "policy_details") -> Dict[str, Any]:
+        """Extract structured data from the current portal page.
+
+        Args:
+            data_type: Type of data to extract. Supported:
+                - 'policy_details': Extract policy details from detail page.
+                - 'search_results': Extract policy search results.
+                - 'claim_status': Extract current claim status.
+                - 'dashboard': Extract dashboard summary data.
+
+        Returns:
+            Dict with extracted data.
+        """
+        if not await self._ensure_logged_in():
+            return {"error": "not_logged_in"}
+
+        if data_type == "policy_details":
+            return await self.get_policy_details()
+        elif data_type == "claim_status":
+            status_sel = self.get_sel("claims", "claim_status")
+            status = await self.form.get_text(status_sel) if status_sel else "unknown"
+            return {"claim_status": status}
+        elif data_type == "dashboard":
+            welcome_sel = self.get_sel("dashboard", "welcome_message")
+            profile_sel = self.get_sel("dashboard", "user_profile")
+            return {
+                "welcome": await self.form.get_text(welcome_sel) if welcome_sel else "",
+                "profile": await self.form.get_text(profile_sel) if profile_sel else "",
+            }
+        elif data_type == "search_results":
+            results_sel = self.get_sel("policy_search", "search_results")
+            if not results_sel:
+                return {"results": []}
+            rows = await self.form.get_elements(results_sel)
+            return {"results": rows or []}
+        else:
+            raise ValueError(f"Unknown data_type: {data_type}")
+
+    async def recover_session(self) -> bool:
+        """Attempt to recover an expired or broken session.
+
+        Tries:
+        1. Restore saved session cookies
+        2. Navigate to dashboard to verify
+        3. If login page detected, attempt re-login with saved credentials
+        4. If no credentials, return False for manual intervention
+
+        Returns:
+            True if session is valid after recovery.
+        """
+        # Step 1: Try restoring saved session
+        if await self._restore_session():
+            self._logged_in = True
+            return True
+
+        # Step 2: Try navigating to start URL
+        if not self._engine:
+            return False
+        ok = await self._engine.navigate(self.start_url)
+        if not ok:
+            return False
+        await self._engine.wait_for_navigation(timeout=10000)
+
+        # Step 3: Check if already logged in
+        if await self._check_login_success():
+            self._logged_in = True
+            return True
+
+        # Step 4: Check if login page is showing
+        username_sel = self.get_sel("login", "username")
+        if username_sel and await self._engine.is_visible(username_sel):
+            return False  # Need credentials — can't auto-recover
+
+        return False
+
     async def check_health(self) -> Dict[str, Any]:
         """Check if portal is accessible and logged in."""
+        engine_ok = False
+        if self._engine:
+            try:
+                engine_ok = await self._engine.is_connected()
+            except Exception:
+                engine_ok = False
+
+        session_ok = False
+        if self._logged_in:
+            session_ok = True
+        elif self._engine:
+            # Check if we're on a valid page
+            try:
+                session_ok = await self._check_login_success()
+            except Exception:
+                session_ok = False
+
         return {
             "adapter": self.adapter_name,
             "portal": self.portal_name,
-            "logged_in": self._logged_in,
+            "logged_in": session_ok,
+            "engine_connected": engine_ok,
             "engine": self._engine.name if self._engine else "none",
             "has_mapping": self.mapping is not None,
             "start_url": self.start_url,
+            "healthy": engine_ok or not self._engine,  # healthy if no engine needed or engine OK
         }
 
     # ── Internal ──
@@ -406,8 +608,16 @@ _ADAPTER_MAP: Dict[str, type] = {
 
 def get_adapter(portal_id: str,
                 mapping: Optional[PortalMapping] = None,
-                engine: Optional[BrowserEngine] = None) -> Optional[PortalAdapter]:
-    """Get a portal adapter by ID, auto-loading mapping."""
+                engine: Optional[BrowserEngine] = None,
+                login_url: Optional[str] = None) -> Optional[PortalAdapter]:
+    """Get a portal adapter by ID, auto-loading mapping.
+
+    Args:
+        portal_id: Portal identifier (e.g. 'great_eastern', 'aia').
+        mapping: Optional pre-loaded PortalMapping. Auto-loaded if None.
+        engine: Optional BrowserEngine instance.
+        login_url: Optional DB Portal.login_url override (takes priority).
+    """
     adapter_cls = _ADAPTER_MAP.get(portal_id)
     if not adapter_cls:
         return None
@@ -415,7 +625,7 @@ def get_adapter(portal_id: str,
     if mapping is None:
         mapping = load_portal_mapping(portal_id)
 
-    return adapter_cls(mapping=mapping, engine=engine)
+    return adapter_cls(mapping=mapping, engine=engine, login_url=login_url)
 
 
 def list_adapters() -> List[Dict[str, Any]]:

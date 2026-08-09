@@ -6,7 +6,8 @@ Returns mock data when no DB session is available.
 
 from __future__ import annotations
 
-from src.tools.base import ToolBase, ToolResult
+from src.tools.base import ToolBase
+from src.tools.models import ToolExecutionResult
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -37,8 +38,8 @@ class FindCustomer(ToolBase):
             "required": ["search_term"],
         }
 
-    async def execute(self, **kwargs) -> ToolResult:
-        search_term = kwargs.get("search_term", "")
+    async def execute(self, arguments: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> ToolExecutionResult:
+        search_term = arguments.get("search_term", "")
 
         # Try DB-backed repository first
         try:
@@ -48,9 +49,7 @@ class FindCustomer(ToolBase):
             repo = CustomerRepository(session)
             customers = repo.search(search_term)
             session.close()
-            return ToolResult(
-                success=True,
-                data={
+            return ToolExecutionResult.ok(                data={
                     "customers": [
                         {
                             "id": c.id,
@@ -67,9 +66,7 @@ class FindCustomer(ToolBase):
             )
         except Exception:
             # Fallback: return empty result with helpful note
-            return ToolResult(
-                success=True,
-                data={
+            return ToolExecutionResult.ok(                data={
                     "customers": [],
                     "count": 0,
                     "search_term": search_term,
@@ -123,11 +120,11 @@ class CreateCustomer(ToolBase):
             "required": ["name", "ic"],
         }
 
-    async def execute(self, **kwargs) -> ToolResult:
-        name = kwargs.get("name", "")
-        ic = kwargs.get("ic", "")
-        email = kwargs.get("email", "")
-        phone = kwargs.get("phone", "")
+    async def execute(self, arguments: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> ToolExecutionResult:
+        name = arguments.get("name", "")
+        ic = arguments.get("ic", "")
+        email = arguments.get("email", "")
+        phone = arguments.get("phone", "")
 
         try:
             from src.database.db_manager import get_session
@@ -146,9 +143,7 @@ class CreateCustomer(ToolBase):
             session.refresh(customer)
             session.close()
 
-            return ToolResult(
-                success=True,
-                data={
+            return ToolExecutionResult.ok(                data={
                     "id": str(customer.id),
                     "name": customer.name,
                     "ic": customer.ic_number,
@@ -157,9 +152,7 @@ class CreateCustomer(ToolBase):
                 },
             )
         except Exception as e:
-            return ToolResult(
-                success=False,
-                error=f"Failed to create customer: {e}",
+            return ToolExecutionResult.fail(error=f"Failed to create customer: {e}",
             )
 
 

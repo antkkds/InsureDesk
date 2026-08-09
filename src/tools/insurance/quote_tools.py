@@ -16,7 +16,8 @@ from __future__ import annotations
 
 from typing import Optional, List as TypingList
 
-from src.tools.base import ToolBase, ToolResult
+from src.tools.base import ToolBase
+from src.tools.models import ToolExecutionResult
 from src.quote.mock import MockQuoteAdapter
 from src.quote.models import QuoteRequest, QuoteItem
 from src.portals.base import SessionMode
@@ -66,13 +67,11 @@ class ListProducts(ToolBase):
     def description(self) -> str:
         return "List all available insurance product codes (e.g. FIRE, MOTOR, PA)."
 
-    async def execute(self, **kwargs) -> ToolResult:
+    async def execute(self, arguments: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> ToolExecutionResult:
         adapter = _get_adapter()
         products = adapter.config.product_codes
         multipliers = adapter.config.risk_multipliers
-        return ToolResult(
-            success=True,
-            data={
+        return ToolExecutionResult.ok(            data={
                 "products": [
                     {
                         "code": code,
@@ -143,30 +142,28 @@ class CreateQuote(ToolBase):
             "required": ["proposer_name", "risk_class", "sum_insured"],
         }
 
-    async def execute(self, **kwargs) -> ToolResult:
+    async def execute(self, arguments: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> ToolExecutionResult:
         adapter = _get_adapter()
 
         request = QuoteRequest(
             portal="mock",
             adapter="mock_quote",
             channel_type="MOCK",
-            proposer_name=kwargs.get("proposer_name", ""),
-            proposer_ic=kwargs.get("proposer_ic", ""),
-            proposer_email=kwargs.get("proposer_email", ""),
-            risk_class=kwargs.get("risk_class", "fire"),
+            proposer_name=arguments.get("proposer_name", ""),
+            proposer_ic=arguments.get("proposer_ic", ""),
+            proposer_email=arguments.get("proposer_email", ""),
+            risk_class=arguments.get("risk_class", "fire"),
             items=[
                 QuoteItem(
-                    description=kwargs.get("item_description", f"{kwargs.get('risk_class', 'risk')} insurance"),
-                    sum_insured=kwargs.get("sum_insured", 100000),
-                    risk_class=kwargs.get("risk_class", "fire"),
+                    description=arguments.get("item_description", f"{arguments.get('risk_class', 'risk')} insurance"),
+                    sum_insured=arguments.get("sum_insured", 100000),
+                    risk_class=arguments.get("risk_class", "fire"),
                 )
             ],
         )
 
         result = await adapter.create_quote(request)
-        return ToolResult(
-            success=True,
-            data={
+        return ToolExecutionResult.ok(            data={
                 "quote_number": result.quote_number,
                 "status": result.status.value,
                 "proposer_name": request.proposer_name,
@@ -223,28 +220,26 @@ class CalculateQuote(ToolBase):
             "required": ["proposer_name", "risk_class", "sum_insured"],
         }
 
-    async def execute(self, **kwargs) -> ToolResult:
+    async def execute(self, arguments: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> ToolExecutionResult:
         adapter = _get_adapter()
 
         request = QuoteRequest(
             portal="mock",
             adapter="mock_quote",
             channel_type="MOCK",
-            proposer_name=kwargs.get("proposer_name", ""),
-            risk_class=kwargs.get("risk_class", "fire"),
+            proposer_name=arguments.get("proposer_name", ""),
+            risk_class=arguments.get("risk_class", "fire"),
             items=[
                 QuoteItem(
-                    description=kwargs.get("item_description", f"{kwargs.get('risk_class', 'risk')} insurance"),
-                    sum_insured=kwargs.get("sum_insured", 100000),
-                    risk_class=kwargs.get("risk_class", "fire"),
+                    description=arguments.get("item_description", f"{arguments.get('risk_class', 'risk')} insurance"),
+                    sum_insured=arguments.get("sum_insured", 100000),
+                    risk_class=arguments.get("risk_class", "fire"),
                 )
             ],
         )
 
         result = await adapter.calculate(request)
-        return ToolResult(
-            success=True,
-            data={
+        return ToolExecutionResult.ok(            data={
                 "quote_number": result.quote_number,
                 "status": result.status.value,
                 "gross_premium": result.gross_premium,
@@ -302,9 +297,9 @@ class CompareQuotes(ToolBase):
             "required": ["proposer_name", "sum_insured"],
         }
 
-    async def execute(self, **kwargs) -> ToolResult:
+    async def execute(self, arguments: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> ToolExecutionResult:
         adapter = _get_adapter()
-        risk_classes = kwargs.get("risk_classes") or [
+        risk_classes = arguments.get("risk_classes") or [
             "fire", "engineering", "motor", "personal_accident", "travel"
         ]
 
@@ -314,12 +309,12 @@ class CompareQuotes(ToolBase):
                 portal="mock",
                 adapter="mock_quote",
                 channel_type="MOCK",
-                proposer_name=kwargs.get("proposer_name", "Test"),
+                proposer_name=arguments.get("proposer_name", "Test"),
                 risk_class=rc,
                 items=[
                     QuoteItem(
                         description=f"{rc} insurance",
-                        sum_insured=kwargs.get("sum_insured", 100000),
+                        sum_insured=arguments.get("sum_insured", 100000),
                         risk_class=rc,
                     )
                 ],
@@ -337,9 +332,7 @@ class CompareQuotes(ToolBase):
         # Sort by total premium ascending
         comparisons.sort(key=lambda x: x["total_premium"])
 
-        return ToolResult(
-            success=True,
-            data={
+        return ToolExecutionResult.ok(            data={
                 "comparisons": comparisons,
                 "count": len(comparisons),
                 "lowest_premium": comparisons[0] if comparisons else None,
@@ -376,20 +369,16 @@ class SaveDraftQuote(ToolBase):
             "required": ["quote_number"],
         }
 
-    async def execute(self, **kwargs) -> ToolResult:
+    async def execute(self, arguments: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> ToolExecutionResult:
         adapter = _get_adapter()
-        quote_number = kwargs.get("quote_number", "")
+        quote_number = arguments.get("quote_number", "")
         result = await adapter.save_draft(quote_number)
 
         if result is None:
-            return ToolResult(
-                success=False,
-                error=f"Quote '{quote_number}' not found or could not be saved.",
+            return ToolExecutionResult.fail(error=f"Quote '{quote_number}' not found or could not be saved.",
             )
 
-        return ToolResult(
-            success=True,
-            data={
+        return ToolExecutionResult.ok(            data={
                 "quote_number": result.quote_number,
                 "status": result.status.value,
                 "created_at": result.created_at.isoformat() if hasattr(result, "created_at") else "",
@@ -426,16 +415,14 @@ class GetQuoteStatus(ToolBase):
             "required": ["quote_number"],
         }
 
-    async def execute(self, **kwargs) -> ToolResult:
+    async def execute(self, arguments: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> ToolExecutionResult:
         adapter = _get_adapter()
-        quote_number = kwargs.get("quote_number", "")
+        quote_number = arguments.get("quote_number", "")
 
         # Check drafts first
         draft = adapter._drafts.get(quote_number)
         if draft:
-            return ToolResult(
-                success=True,
-                data={
+            return ToolExecutionResult.ok(                data={
                     "quote_number": draft.quote_number,
                     "status": draft.status.value,
                     "created_at": draft.created_at.isoformat() if hasattr(draft, "created_at") else "",
@@ -444,17 +431,13 @@ class GetQuoteStatus(ToolBase):
 
         # Check active quote
         if adapter._active_quote and adapter._active_quote.get("quote_number") == quote_number:
-            return ToolResult(
-                success=True,
-                data={
+            return ToolExecutionResult.ok(                data={
                     "quote_number": quote_number,
                     "status": "active",
                 },
             )
 
-        return ToolResult(
-            success=True,
-            data={
+        return ToolExecutionResult.ok(            data={
                 "quote_number": quote_number,
                 "status": "not_found",
             },

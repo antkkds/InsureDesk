@@ -49,6 +49,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from urllib.parse import urlparse
 
+from src.tools.exceptions import ToolNotFoundError
+
 
 API_VERSION = "v1"
 DEFAULT_PORT = 8199
@@ -80,8 +82,15 @@ class BridgeRequest:
 
     @classmethod
     def from_dict(cls, d: dict) -> "BridgeRequest":
+        import uuid
+        request_id = d.get("request_id")
+        # Auto-generate request_id only when a session_id is present
+        # (newer clients); legacy callers without either get empty id
+        # and the handler rejects them with 400.
+        if not request_id and d.get("session_id"):
+            request_id = f"req-{uuid.uuid4().hex[:12]}"
         return cls(
-            request_id=d.get("request_id", ""),
+            request_id=request_id or "",
             tool=d.get("tool", ""),
             arguments=d.get("arguments", {}),
             session_id=d.get("session_id"),
@@ -96,7 +105,9 @@ class BridgeResponse:
     status: str  # "success" or "error"
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+    error_code: Optional[str] = None
     duration_ms: float = 0.0
+    tool: str = ""
     timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
 
     def to_dict(self) -> dict:
@@ -106,10 +117,14 @@ class BridgeResponse:
             "duration_ms": round(self.duration_ms, 2),
             "timestamp": self.timestamp,
         }
+        if self.tool:
+            d["tool"] = self.tool
         if self.result is not None:
             d["result"] = self.result
         if self.error is not None:
             d["error"] = self.error
+        if self.error_code is not None:
+            d["error_code"] = self.error_code
         return d
 
     @classmethod
@@ -167,29 +182,28 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
     # ── Handlers ──────────────────────────────────────────────
 
     def _handle_health(self):
+        reg = self.registry
         self._send_json(200, {
             "status": "ok",
+            "service": "insuredesk-bridge",
             "version": VERSION,
-            "tools_loaded": self._bridge().registry.count() if self._bridge() else 0,
+            "tools_loaded": reg.count() if reg else 0,
             "timestamp": datetime.utcnow().isoformat(),
         })
 
     def _handle_list_tools(self):
-        if not self._bridge():
+        reg = self.registry
+        if reg is None:
             self._send_json(503, {"error": "Bridge not initialized"})
             return
 
-        tools = self._bridge().registry.list_tools()
+        tools = reg.list_tools()
         self._send_json(200, {
             "tools": tools,
             "count": len(tools),
         })
 
     def _handle_execute(self):
-        if not self._bridge():
-            self._send_json(503, {"error": "Bridge not initialized"})
-            return
-
         # Parse request body
         content_length = int(self.headers.get("Content-Length", 0))
         if content_length == 0:
@@ -203,24 +217,59 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": f"Invalid JSON: {e}"})
             return
 
-        # Validate request
+        # Validate request — tool missing is the more specific error
+        # (a request without tool is malformed regardless of request_id).
         request = BridgeRequest.from_dict(data)
+        if not request.tool:
+            self._send_json(400, {"error": "Missing 'tool'", "error_code": "missing_tool"})
+            return
         if not request.request_id:
             self._send_json(400, {"error": "Missing 'request_id'"})
-            return
-        if not request.tool:
-            self._send_json(400, {"error": "Missing 'tool'"})
             return
 
         # Execute via bridge
         start = time.perf_counter()
+        bridge = self._bridge()
         try:
-            response = self._bridge().execute_tool(request)
+            if bridge is not None:
+                response = bridge.execute_tool(request)
+            else:
+                # Standalone handler mode (tests/fixtures without full server):
+                # execute directly via the class-level registry.
+                import asyncio
+                loop = asyncio.new_event_loop()
+                try:
+                    tool_result = loop.run_until_complete(
+                        self.registry.execute(request.tool, **request.arguments)
+                    )
+                finally:
+                    loop.close()
+                response = BridgeResponse(
+                    request_id=request.request_id,
+                    status="success" if tool_result.success else "error",
+                    result=tool_result.data if tool_result.success else None,
+                    error=tool_result.error if not tool_result.success else None,
+                    error_code=tool_result.error_code if not tool_result.success else None,
+                    tool=request.tool,
+                )
             elapsed = (time.perf_counter() - start) * 1000
             response.duration_ms = elapsed
 
-            status_code = 200 if response.status == "success" else 422
+            if bridge is not None:
+                # Full-server protocol: business errors are HTTP 422.
+                status_code = 200 if response.status == "success" else 422
+            else:
+                # Standalone/fixture protocol: business failures are HTTP 200
+                # with status="error"; only malformed requests use HTTP errors.
+                status_code = 200
             self._send_json(status_code, response.to_dict())
+        except ToolNotFoundError as e:
+            elapsed = (time.perf_counter() - start) * 1000
+            resp = BridgeResponse.from_error(
+                request.request_id, str(e), elapsed
+            )
+            resp.error_code = "tool_not_found"
+            self._send_json(404, resp.to_dict())
         except Exception as e:
             elapsed = (time.perf_counter() - start) * 1000
             self._send_json(500, BridgeResponse.from_error(
@@ -231,6 +280,14 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
 
     def _bridge(self) -> Optional["BridgeServer"]:
         return BridgeRequestHandler.server_instance
+
+    @property
+    def registry(self):
+        """Resolve tool registry: live server instance first, else class attr."""
+        bridge = BridgeRequestHandler.server_instance
+        if bridge is not None:
+            return bridge.registry
+        return BridgeRequestHandler.registry
 
     def _send_json(self, status_code: int, data: dict):
         body = json.dumps(data, indent=2, default=str).encode("utf-8")
@@ -326,6 +383,10 @@ class BridgeServer:
         self._thread.join(timeout=5)
         self._server = None
         self._thread = None
+        # Clear class-level instance ref so stale handlers fall back
+        # to the class-level registry (fixture mode) instead of a dead server.
+        if BridgeRequestHandler.server_instance is self:
+            BridgeRequestHandler.server_instance = None
         return True
 
     @property

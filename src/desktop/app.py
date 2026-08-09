@@ -21,8 +21,11 @@ from pathlib import Path
 from PySide6.QtCore import Qt, QSize, Signal, Slot, QThread, QTimer
 from PySide6.QtGui import QIcon, QFont, QAction, QPixmap
 
+import logging
+logger = logging.getLogger("insuredesk.desktop.app")
+
 # Import InsureDesk modules
-from src.database.db_manager import init_db, get_engine, get_session, seed_companies
+from src.database.db_manager import init_db, get_engine, get_session, seed_companies, ensure_portals
 from src.database.models import Base, Customer, Policy, Document, Company, Setting
 
 from src.customers.repository import CustomerRepository, PolicyRepository, DocumentRepository, CustomerData, PolicyData, DocumentData
@@ -58,6 +61,7 @@ class InsureDeskWindow(QMainWindow):
         init_db(engine)
         self.session = get_session(engine)
         seed_companies(self.session)
+        ensure_portals(self.session)
 
         # Initialize services
         self.customer_repo = CustomerRepository(self.session)
@@ -86,6 +90,9 @@ class InsureDeskWindow(QMainWindow):
         # Browser engine (lazy)
         self.browser_engine = None
 
+        # ── External plugins ──────────────────────────────
+        self._load_external_plugins()
+
         # Assistant name
         self.assistant_name = self._get_setting("assistant_name", "Marry")
 
@@ -97,6 +104,30 @@ class InsureDeskWindow(QMainWindow):
         if saved_token:
             self.bridge_client.connect(saved_token)
             self._update_connection_status()
+
+    def _load_external_plugins(self) -> None:
+        """Load plugins from external ``plugins/`` directory.
+
+        Searches relative to the executable (PyInstaller build) or
+        the project root (development).
+        """
+        # Determine the base directory
+        if getattr(sys, 'frozen', False):
+            # PyInstaller COLLECT mode: plugins are in _internal/plugins/
+            base = Path(sys.executable).parent / "_internal"
+            if not (base / "plugins").is_dir():
+                base = Path(sys.executable).parent
+        else:
+            base = Path(__file__).parent.parent.parent  # src/desktop/app.py → project root
+
+        plugin_dir = base / "plugins"
+        if not plugin_dir.is_dir():
+            plugin_dir = Path.cwd() / "plugins"
+
+        from src.plugins.registry import default_registry
+        count = default_registry.load_from_directory(str(plugin_dir))
+        if count > 0:
+            logger.info("Loaded %d external plugin(s) from %s", count, plugin_dir)
 
     def _get_setting(self, key: str, default: str = "") -> str:
         setting = self.session.query(Setting).filter(Setting.key == key).first()
@@ -1269,13 +1300,26 @@ class CompaniesWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
 
+        # Header row with title + Add button
+        header = QHBoxLayout()
         title = QLabel("🌐  Insurance Companies")
         title.setStyleSheet("font-size: 22px; font-weight: bold; color: #1a1a2e;")
-        layout.addWidget(title)
+        header.addWidget(title)
+        header.addStretch()
+
+        self.add_btn = QPushButton("➕ Add Company")
+        self.add_btn.clicked.connect(self._add_company)
+        self.add_btn.setStyleSheet("""
+            QPushButton { background: #1a1a2e; color: white; padding: 8px 20px;
+                          border-radius: 6px; font-size: 13px; font-weight: bold; }
+            QPushButton:hover { background: #16213e; }
+        """)
+        header.addWidget(self.add_btn)
+        layout.addLayout(header)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Company", "Short Name", "Adapter", "Status", "Last Sync"])
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels(["Company", "Short Name", "Website", "Agent Portal", "Adapter", "Status", "Last Sync"])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setAlternatingRowColors(True)
         layout.addWidget(self.table)
@@ -1288,11 +1332,114 @@ class CompaniesWidget(QWidget):
         for row, c in enumerate(companies):
             self.table.setItem(row, 0, QTableWidgetItem(c.name))
             self.table.setItem(row, 1, QTableWidgetItem(c.short_name))
-            self.table.setItem(row, 2, QTableWidgetItem(c.adapter_name or "—"))
+            self.table.setItem(row, 2, QTableWidgetItem(c.portal_url or "—"))
+            # Agent portal status (default portal)
+            portal = c.portals[0] if c.portals else None
+            if portal:
+                if portal.profile_state == "READY":
+                    portal_display = "✅ Configured"
+                elif portal.login_url:
+                    portal_display = "⚠️ No Profile"
+                else:
+                    portal_display = "⬜ Not Configured"
+            else:
+                portal_display = "—"
+            self.table.setItem(row, 3, QTableWidgetItem(portal_display))
+            self.table.setItem(row, 4, QTableWidgetItem(c.adapter_name or "—"))
             status = "✅ Active" if c.is_active else "❌ Inactive"
-            self.table.setItem(row, 3, QTableWidgetItem(status))
+            self.table.setItem(row, 5, QTableWidgetItem(status))
             sync = c.last_sync.strftime("%Y-%m-%d %H:%M") if c.last_sync else "Never"
-            self.table.setItem(row, 4, QTableWidgetItem(sync))
+            self.table.setItem(row, 6, QTableWidgetItem(sync))
+
+    def _add_company(self):
+        """Open dialog to add a new insurance company."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Add Insurance Company")
+        dialog.setMinimumWidth(450)
+        layout = QFormLayout(dialog)
+
+        name_input = QLineEdit()
+        name_input.setPlaceholderText("e.g. Great Eastern")
+        layout.addRow("Company Name:", name_input)
+
+        short_input = QLineEdit()
+        short_input.setPlaceholderText("e.g. GE")
+        layout.addRow("Short Name:", short_input)
+
+        url_input = QLineEdit()
+        url_input.setPlaceholderText("e.g. https://www.greateasternlife.com/my")
+        layout.addRow("Official Website:", url_input)
+
+        login_input = QLineEdit()
+        login_input.setPlaceholderText("e.g. https://geglink.greateasterngeneral.com/geglink/userlogin.html")
+        layout.addRow("Agent Portal Login:", login_input)
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(dialog.reject)
+        cancel_btn.setStyleSheet("padding: 6px 16px;")
+        btn_layout.addWidget(cancel_btn)
+
+        save_btn = QPushButton("💾 Save")
+        save_btn.setStyleSheet("""
+            QPushButton { background: #1a1a2e; color: white; padding: 6px 20px;
+                          border-radius: 4px; font-weight: bold; }
+            QPushButton:hover { background: #16213e; }
+        """)
+        save_btn.clicked.connect(lambda: self._save_company(dialog, name_input, short_input, url_input, login_input))
+        btn_layout.addWidget(save_btn)
+        layout.addRow(btn_layout)
+
+        dialog.exec()
+
+    def _save_company(self, dialog, name_input, short_input, url_input, login_input):
+        from src.database.models import Portal
+
+        name = name_input.text().strip()
+        short = short_input.text().strip()
+        url = url_input.text().strip()
+        login_url = login_input.text().strip()
+
+        if not name:
+            QMessageBox.warning(dialog, "Missing Info", "Company name is required.")
+            return
+        if not short:
+            QMessageBox.warning(dialog, "Missing Info", "Short name is required.")
+            return
+
+        # Check for duplicate
+        existing = self.app.session.query(Company).filter(
+            Company.short_name == short
+        ).first()
+        if existing:
+            QMessageBox.warning(dialog, "Duplicate", f"Short name '{short}' already exists.")
+            return
+
+        company = Company(
+            name=name,
+            short_name=short,
+            portal_url=url if url else None,
+            is_active=True,
+        )
+        self.app.session.add(company)
+        self.app.session.flush()  # get company.id
+
+        # Create default Portal (agent login entry)
+        portal = Portal(
+            company_id=company.id,
+            name=f"{short} Portal",
+            login_url=login_url if login_url else None,
+            base_url=login_url if login_url else None,
+            profile_path=None,
+            profile_state="UNCONFIGURED" if login_url else "UNCONFIGURED",
+            is_default=True,
+        )
+        self.app.session.add(portal)
+        self.app.session.commit()
+        self._refresh()
+        dialog.accept()
 
 
 class AssistantWidget(QWidget):
@@ -1393,6 +1540,9 @@ class SettingsWidget(QWidget):
         super().__init__()
         self.app = app
         self.credential_service = credential_service
+        # Cache company lookups: adapter_name → display name
+        self._company_names: dict[str, str] = {}
+        self._refresh_company_names()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
 
@@ -1588,20 +1738,54 @@ class SettingsWidget(QWidget):
         # Load credential status
         self._refresh_credentials()
 
+    def _refresh_company_names(self):
+        """Rebuild the adapter_name → display name cache from DB companies."""
+        self._company_names = {}
+        try:
+            from src.database.models import Company
+            companies = self.app.session.query(Company).all()
+            for c in companies:
+                if c.adapter_name:
+                    self._company_names[c.adapter_name.lower()] = c.name
+                # Also index by short_name for flexibility
+                self._company_names[c.short_name.lower()] = c.name
+        except Exception:
+            # Fallback if DB not ready
+            pass
+
+    def _portal_display_name(self, portal_key: str) -> str:
+        """Get a display name for a portal key from the DB companies."""
+        return self._company_names.get(portal_key.lower(), portal_key.replace("_", " ").title())
+
     def _refresh_credentials(self):
-        """Refresh the credential cards for each portal."""
+        """Refresh credential cards — only show portals with saved credentials."""
         # Clear existing cards
         while self.cred_cards.count():
             item = self.cred_cards.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
 
+        # Refresh company name cache
+        self._refresh_company_names()
+
+        # Get configured portals from credential service
         configured = self.credential_service.list_portals()
 
-        for portal_key, portal_name, icon in self.PORTALS:
-            card = self._build_portal_card(portal_key, portal_name, icon,
-                                           portal_key in configured)
-            self.cred_cards.addWidget(card)
+        if configured:
+            for portal_key in configured:
+                portal_name = self._portal_display_name(portal_key)
+                card = self._build_portal_card(portal_key, portal_name, "🏛️", True)
+                self.cred_cards.addWidget(card)
+        else:
+            # Empty state
+            empty_label = QLabel("No portal credentials saved yet. Click '➕ Add New' below to get started.")
+            empty_label.setStyleSheet("color: #999; font-size: 12px; padding: 12px;")
+            empty_label.setWordWrap(True)
+            self.cred_cards.addWidget(empty_label)
+
+        # "Add New" card at the bottom
+        add_card = self._build_add_credential_card()
+        self.cred_cards.addWidget(add_card)
 
     def _build_portal_card(self, portal_key: str, portal_name: str,
                            icon: str, is_configured: bool) -> QWidget:
@@ -1688,6 +1872,123 @@ class SettingsWidget(QWidget):
             layout.addWidget(add_btn)
 
         return card
+
+    def _build_add_credential_card(self) -> QWidget:
+        """Build a card with an 'Add New' button to add credentials for any company."""
+        card = QFrame()
+        card.setStyleSheet("""
+            QFrame { background: #f8f9ff; border: 2px dashed #c0c8e0;
+                     border-radius: 8px; margin: 2px 0; }
+            QFrame:hover { border-color: #1a73e8; background: #eef1ff; }
+        """)
+        card.setFixedHeight(60)
+        layout = QHBoxLayout(card)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.addStretch()
+
+        add_btn = QPushButton("➕ Add New Portal Credential")
+        add_btn.setStyleSheet("""
+            QPushButton { background: transparent; color: #1a73e8; padding: 8px 24px;
+                          border-radius: 6px; font-size: 13px; font-weight: bold; border: none; }
+            QPushButton:hover { background: rgba(26,115,232,0.08); }
+        """)
+        add_btn.clicked.connect(self._show_add_credential_dialog)
+        layout.addWidget(add_btn)
+        layout.addStretch()
+        return card
+
+    def _show_add_credential_dialog(self):
+        """Show dialog to add credentials — pick a company from the full DB list."""
+        self._refresh_company_names()
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Add Portal Credential")
+        dialog.setMinimumWidth(480)
+        form = QFormLayout(dialog)
+
+        # Company picker from DB
+        company_combo = QComboBox()
+        company_combo.setEditable(True)
+        company_combo.setPlaceholderText("Search or select an insurance company...")
+        try:
+            from src.database.models import Company as Co
+            companies = self.app.session.query(Co).order_by(Co.name).all()
+            for c in companies:
+                display = c.name
+                if c.portal_url:
+                    display += f" ({c.portal_url})"
+                company_combo.addItem(display, c.adapter_name or c.short_name.lower())
+        except Exception:
+            # Fallback list
+            for key in ["great_eastern", "allianz", "aia", "etiqa", "tokio_marine"]:
+                company_combo.addItem(key.replace("_", " ").title(), key)
+        form.addRow("Company:", company_combo)
+
+        account_input = QLineEdit()
+        account_input.setPlaceholderText("Default")
+        form.addRow("Account Name:", account_input)
+
+        username_input = QLineEdit()
+        username_input.setPlaceholderText("Username / Email")
+        form.addRow("Username:", username_input)
+
+        password_input = QLineEdit()
+        password_input.setEchoMode(QLineEdit.Password)
+        password_input.setPlaceholderText("Password")
+        form.addRow("Password:", password_input)
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.clicked.connect(dialog.reject)
+        cancel_btn.setStyleSheet("padding: 6px 16px;")
+        btn_layout.addWidget(cancel_btn)
+
+        save_btn = QPushButton("💾 Save")
+        save_btn.setStyleSheet("""
+            QPushButton { background: #1a1a2e; color: white; padding: 6px 20px;
+                          border-radius: 4px; font-weight: bold; }
+            QPushButton:hover { background: #16213e; }
+        """)
+        save_btn.clicked.connect(lambda: self._save_new_credential(
+            dialog, company_combo, account_input, username_input, password_input))
+        btn_layout.addWidget(save_btn)
+        form.addRow(btn_layout)
+
+        dialog.exec()
+
+    def _save_new_credential(self, dialog, company_combo, account_input,
+                             username_input, password_input):
+        """Save a new credential from the add dialog."""
+        portal_key = company_combo.currentData()
+        portal_name = company_combo.currentText().split(" (")[0]  # Remove URL suffix
+        account_name = account_input.text().strip() or "Default"
+        username = username_input.text().strip()
+        password = password_input.text().strip()
+
+        if not portal_key:
+            QMessageBox.warning(dialog, "Missing Info", "Please select a company.")
+            return
+        if not username or not password:
+            QMessageBox.warning(dialog, "Missing Info", "Username and password are required.")
+            return
+
+        try:
+            self.credential_service.store(
+                portal=portal_key,
+                account_name=account_name,
+                username=username,
+                password=password,
+            )
+            QMessageBox.information(
+                self, "Saved",
+                f"✅ {portal_name} credentials saved securely!"
+            )
+            self._refresh_credentials()
+            dialog.accept()
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to save credentials: {e}")
 
     def _add_credentials(self, portal_key: str, portal_name: str):
         """Show dialog to add credentials for a portal."""
