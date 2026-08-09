@@ -129,7 +129,17 @@ async def main():
         try:
             await page.click("#emailPDSandPDPN", timeout=8000)
             print("  PDS button clicked")
-            await asyncio.sleep(3)
+            # Poll for loading overlay to clear (email send can take a while)
+            for i in range(18):
+                await asyncio.sleep(5)
+                loading = await page.evaluate("""(() => {
+                    const els = document.querySelectorAll('.loading-banner, .cdk-overlay-container mat-spinner, .mat-progress-spinner, [class*=loading][class*=overlay], .overlay-backdrop');
+                    const visible = Array.from(els).filter(e => e.offsetParent !== null || e.getAttribute('role') === 'progressbar');
+                    return visible.length;
+                })()""")
+                print(f"  loading poll {i+1}: {loading}")
+                if loading == 0:
+                    break
         except Exception as e:
             print("  PDS err:", str(e)[:100])
 

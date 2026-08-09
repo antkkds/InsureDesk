@@ -59,6 +59,9 @@ SAMPLE_DATA = {
     "hire_purchase": "N",        # radio values are Y/N (btn_0/btn_1)
     # drivers
     "all_drivers_cover": False,
+    # sum_insured (step 3)
+    "intermediary_decl_1": True,
+    "intermediary_decl_2": True,
 }
 
 

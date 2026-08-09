@@ -105,7 +105,7 @@ class TestMotorPrivateCarSpec:
 
     def test_sections_order_and_count(self):
         names = [s.name for s in self.spec.sections]
-        assert names == ["quotation_details", "owner", "address", "vehicle", "drivers"]
+        assert names == ["quotation_details", "owner", "address", "vehicle", "drivers", "sum_insured"]
 
     def test_quotation_details_confirmed_selectors(self):
         sec = self.spec.section("quotation_details")
@@ -170,7 +170,7 @@ class TestMotorPrivateCarSpec:
 
     def test_to_fill_schemas_all_sections(self):
         schemas = self.spec.to_fill_schemas()
-        assert set(schemas.keys()) == {"quotation_details", "owner", "address", "vehicle", "drivers"}
+        assert set(schemas.keys()) == {"quotation_details", "owner", "address", "vehicle", "drivers", "sum_insured"}
         assert all(isinstance(s, FillSchema) for s in schemas.values())
 
     def test_invalid_field_type_rejected(self):
