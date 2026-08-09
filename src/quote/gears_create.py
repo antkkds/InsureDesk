@@ -228,7 +228,27 @@ class GearsQuoteCreator:
                 pass
         return False
 
-    async def _close_overlay(self) -> None:
+    async def _close_overlay(self) -> str:
+        """Dismiss modal dialogs. Also DETECTS hard business blockers and
+        returns their message so the flow can fail fast with a clear status
+        (e.g. renewal-window block) instead of hanging on a dead page."""
+        blocker = await self._page.evaluate(
+            """() => {
+              const o = document.querySelector('.cdk-overlay-container');
+              if (!o) return '';
+              const d = o.querySelector('.mat-dialog-container, .cdk-dialog-container');
+              if (d) {
+                const t = (d.innerText || '').trim();
+                if (/only renew 60 days|Unable to proceed/i.test(t)) {
+                  return t.slice(0, 200);
+                }
+              }
+              return '';
+            }"""
+        )
+        if blocker:
+            self._log(f"BLOCKER DIALOG: {blocker[:120]}")
+            return blocker
         await self._page.evaluate(
             """() => {
               const o = document.querySelector('.cdk-overlay-container');
@@ -244,6 +264,7 @@ class GearsQuoteCreator:
             }"""
         )
         await self._page.wait_for_timeout(1000)
+        return ""
 
     async def _js_set_value(self, field_id: str, value: str) -> str:
         """Set a JS-managed/disabled field value via the allowlisted contract.
@@ -571,12 +592,20 @@ class GearsQuoteCreator:
             # Continue → step 3 (may need 2 clicks)
             await self._click_btn("Continue")
             await page.wait_for_timeout(6000)
-            await self._close_overlay()
+            blocker = await self._close_overlay()
+            if blocker:
+                out.status = "ERROR"
+                out.error = f"blocked: {blocker[:120]}"
+                return out
             has_si = await page.evaluate("() => !!document.getElementById('desiredSI')")
             if not has_si:
                 await self._click_btn("Continue")
                 await page.wait_for_timeout(6000)
-                await self._close_overlay()
+                blocker = await self._close_overlay()
+                if blocker:
+                    out.status = "ERROR"
+                    out.error = f"blocked: {blocker[:120]}"
+                    return out
                 has_si = await page.evaluate("() => !!document.getElementById('desiredSI')")
             if not has_si:
                 errs = await page.evaluate(
@@ -603,7 +632,11 @@ class GearsQuoteCreator:
             # reveal add-ons
             await self._click_btn("Continue")
             await page.wait_for_timeout(5000)
-            await self._close_overlay()
+            blocker = await self._close_overlay()
+            if blocker:
+                out.status = "ERROR"
+                out.error = f"blocked: {blocker[:120]}"
+                return out
             if add_ons:
                 for pid, target in [("select_plan_0", "21 days-MYR200"),
                                     ("select_plan_1", "ICCA PLAN-A")]:
