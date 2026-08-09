@@ -52,6 +52,50 @@ class TextStrategy(FillStrategy):
                 selector=field.selector,
             )
 
+        # JS direct set — for Angular currencynumber/formatted inputs where
+        # Playwright fill misbehaves (clear+append bugs; filling the windscreen
+        # sum-insured input auto-unchecks its linked checkbox via Angular).
+        if field.options.get("js_fill"):
+            try:
+                ok = await browser.evaluate(
+                    f"""(() => {{
+                        const el = document.querySelector({field.selector!r});
+                        if (!el) return false;
+                        el.focus();
+                        el.value = {value_str!r};
+                        el.dispatchEvent(new Event('input', {{bubbles: true}}));
+                        el.dispatchEvent(new Event('change', {{bubbles: true}}));
+                        el.blur();
+                        return true;
+                    }})()"""
+                )
+                if not ok:
+                    raise FillTimeoutError(
+                        message=f"JS-fill: element not found for '{field.name}'",
+                        field=field.name,
+                        selector=field.selector,
+                    )
+            except FillTimeoutError:
+                raise
+            except Exception as e:
+                raise FillTimeoutError(
+                    message=f"Failed to JS-fill text field '{field.name}': {e}",
+                    field=field.name,
+                    selector=field.selector,
+                    original=e if isinstance(e, Exception) else None,
+                )
+            # Verify (Verifier tolerates portal reformatting: '5,000' vs '5000')
+            if field.verify:
+                try:
+                    await self._default_verify(browser, field, value_str)
+                except FillVerificationError:
+                    raise FillVerificationError(
+                        message=f"JS-fill verification failed for '{field.name}'",
+                        field=field.name,
+                        selector=field.selector,
+                    )
+            return True
+
         try:
             # Click to focus
             await browser.click(field.selector)

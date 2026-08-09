@@ -41,6 +41,31 @@ class GearsPageAdapter:
     # -- BrowserEngine interface ---------------------------------------
 
     async def click(self, selector: str, timeout: int = 10000) -> bool:
+        # Angular Material checkbox/radio inputs are display:none — Playwright
+        # actionability wait always times out (10s each). JS click updates the
+        # Angular model (verified on live GEARS). Detect element type first.
+        # NOTE: mat-option must stay on native click (JS click does NOT update
+        # its selection state) — MAT-OPTION falls through to page.click.
+        try:
+            kind = await self._page.evaluate(
+                f"""(() => {{
+                    const el = {self._resolve_js(selector)};
+                    if (!el) return 'missing';
+                    return el.tagName + ':' + (el.type || '');
+                }})()"""
+            )
+            if kind.startswith("INPUT:") and kind.endswith(("checkbox", "radio")):
+                await self._page.evaluate(
+                    f"""(() => {{
+                        const el = {self._resolve_js(selector)};
+                        if (el) el.click();
+                    }})()"""
+                )
+                return True
+            if kind == "missing":
+                return False
+        except Exception:
+            pass
         try:
             await self._page.click(selector, timeout=timeout)
             return True

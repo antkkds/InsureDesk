@@ -375,17 +375,17 @@ sections:
           hint: "Strike, Riot and Civil Commotion: ICCA PLAN-A..D1 x MYR75/150 per day"
 
       - name: addon_strike_riot
-        selector: "mat-checkbox:has-text(\"Strike, Riot and Civil Commotion\") input[type=checkbox]"
+        selector: "#add-on-btn-2-input"
         type: checkbox
         required: false
 
       - name: addon_passenger_liability
-        selector: "mat-checkbox:has-text(\"Legal Liability of Passengers\") input[type=checkbox]"
+        selector: "#add-on-btn-3-input"
         type: checkbox
         required: false
 
       - name: addon_windscreen
-        selector: "mat-checkbox:has-text(\"Windscreens, Windows and Sunroof\") input[type=checkbox]"
+        selector: "#add-on-btn-4-input"
         type: checkbox
         required: false
 
@@ -393,25 +393,25 @@ sections:
         selector: "#sumInsured_4"
         type: text
         required: false
-        options: { hint: "Sum insured (MYR) for windscreen add-on" }
+        options: { hint: "Sum insured (MYR) for windscreen add-on", js_fill: true }
 
       - name: addon_thailand
-        selector: "mat-checkbox:has-text(\"Extension of Cover to the Kingdom of Thailand\") input[type=checkbox]"
+        selector: "#add-on-btn-5-input"
         type: checkbox
         required: false
 
       - name: addon_ncd_relief
-        selector: "mat-checkbox:has-text(\"Current Year NCD Relief\") input[type=checkbox]"
+        selector: "#add-on-btn-6-input"
         type: checkbox
         required: false
 
       - name: addon_passenger_liability_2
-        selector: "mat-checkbox:has-text(\"Legal Liability to Passengers (Passenger Liability)\") input[type=checkbox]"
+        selector: "#add-on-btn-7-input"
         type: checkbox
         required: false
 
       - name: addon_special_perils
-        selector: "mat-checkbox:has-text(\"Inclusion of Special Perils\") input[type=checkbox]"
+        selector: "#add-on-btn-10-input"
         type: checkbox
         required: false
 
