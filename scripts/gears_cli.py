@@ -14,6 +14,7 @@ Contract:
 Actions:
     status              — cheap CDP health check (is the GEARS Chrome alive?)
     run                 — full flow: create → step1 → step2 → step3 → save
+    send <quote_url>    — send-application on an existing complete quote
 
 `run` payload fields (all optional, defaults match the live-verified flow):
     id_number, vehicle_number, place
@@ -114,6 +115,9 @@ def build_result(**kw: Any) -> dict[str, Any]:
         "save_status": "",
         "doc_name": "",
         "version": -1,
+        "send_status": "",
+        "send_email": "",
+        "send_http": None,
         "error": "",
         "elapsed": 0.0,
     }
@@ -231,8 +235,44 @@ async def run_flow(payload: dict[str, Any], log: Callable[[str], None]) -> dict[
                 result["save_status"] = "SKIPPED"
 
             result["ok"] = (result["status"] in ("STEP3_OK", "SAVED", "CREATED")) \
-                and (not result["saved"] or result["save_status"] == "SAVED")
+                and (not result["saved"] or result["save_status"] == "SAVED") \
+                and (not payload["save"] or result["save_status"] == "SAVED")
             result["elapsed"] = round(time.monotonic() - t0, 1)
+            return result
+    except Exception as e:  # noqa: BLE001 — bridge must never crash silently
+        return build_result(error=f"{type(e).__name__}: {str(e)[:200]}",
+                            elapsed=time.monotonic() - t0)
+
+
+async def send_quote(quote_url: str, log: Callable[[str], None]) -> dict[str, Any]:
+    """Send-application on an existing quote (must be complete/non-referred)."""
+    from playwright.async_api import async_playwright
+
+    from src.quote.gears_send import GearsQuoteSender
+
+    t0 = time.monotonic()
+    try:
+        async with async_playwright() as p:
+            log("connecting to Chrome CDP 9333 …")
+            browser = await p.chromium.connect_over_cdp(CDP)
+            ctx = browser.contexts[0]
+            page = await ctx.new_page()
+            log(f"sending application for: {quote_url[:90]}")
+            sender = GearsQuoteSender(page)
+            so = await sender.send_application(quote_url=quote_url)
+            log(f"send: {so.status} email={so.email} http={so.http_status}")
+            result = build_result(
+                status=so.status,
+                quote_url=quote_url,
+                ok=so.ok,
+                error=so.error or "",
+                elapsed=round(time.monotonic() - t0, 1),
+            )
+            if so.quote_id:
+                result["quote_id"] = so.quote_id
+            result["send_status"] = so.status
+            result["send_email"] = so.email
+            result["send_http"] = so.http_status
             return result
     except Exception as e:  # noqa: BLE001 — bridge must never crash silently
         return build_result(error=f"{type(e).__name__}: {str(e)[:200]}",
@@ -269,7 +309,7 @@ async def check_status(log: Callable[[str], None]) -> dict[str, Any]:
 def main(argv: Optional[list[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     if not argv:
-        print("usage: gears_cli.py <status|run> [payload-json]", file=sys.stderr)
+        print("usage: gears_cli.py <status|run|send> [payload-json|quote-url]", file=sys.stderr)
         return 2
 
     action = argv[0]
@@ -295,6 +335,15 @@ def main(argv: Optional[list[str]] = None) -> int:
         log(f"run payload: vehicle={payload['vehicle_number']} "
             f"hp={payload['hire_purchase']} save={payload['save']}")
         result = asyncio.run(run_flow(payload, log))
+        print("RESULT:" + json.dumps(result, ensure_ascii=False))
+        return 0 if result["ok"] else 1
+
+    if action == "send":
+        quote_url = argv[1] if len(argv) > 1 else ""
+        if not quote_url:
+            print("usage: gears_cli.py send <quote_url>", file=sys.stderr)
+            return 2
+        result = asyncio.run(send_quote(quote_url, log))
         print("RESULT:" + json.dumps(result, ensure_ascii=False))
         return 0 if result["ok"] else 1
 

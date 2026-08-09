@@ -236,7 +236,9 @@ class GearsQuoteCreator:
                 const btns = Array.from(o.querySelectorAll('button'));
                 const b = btns.find(x =>
                   (x.innerText||'').includes('Continue with application') ||
-                  (x.innerText||'').trim() === 'Ok');
+                  (x.innerText||'').trim() === 'Ok' ||
+                  (x.innerText||'').trim() === 'Yes' ||
+                  (x.innerText||'').trim() === 'Select');
                 if (b) b.click();
               }
             }"""
@@ -333,47 +335,111 @@ class GearsQuoteCreator:
             await page.evaluate("window.scrollTo(0, 0)")
             await page.wait_for_timeout(800)
 
-            text_fields = {
+            # Applicant text fields — always fill (they start empty on every
+            # new quote).
+            applicant_text_fields = {
                 "proposalFullName": kw.get("full_name", "Fionn Liang"),
                 "year_experience": kw.get("year_experience", "10"),
                 "proposalMobileNumber": kw.get("mobile", "0123456789"),
                 "proposalEmail": kw.get("email", "fionn.liang@gmail.com"),
                 "proposalPostalCode": kw.get("postal", "50000"),
                 "proposalAddressLine1": kw.get("address1", "12, Jalan Merdeka"),
-                "chassisNumber": kw.get("chassis", "PN153BK3006001289"),
-                "engineNumber": kw.get("engine", "2AZ3028068"),
-                "engineCapacity": kw.get("engine_cc", "2362"),
             }
-            for fid, val in text_fields.items():
+            for fid, val in applicant_text_fields.items():
                 el = page.locator(f"#{fid}")
                 await el.fill(val)
                 await el.blur()
                 await page.wait_for_timeout(250)
 
-            selects = {
+            # Vehicle text fields — fill ONLY when the portal did NOT
+            # auto-populate them from the plate lookup (real plates come with
+            # JPJ/NVIC data; TEST123/manual path has empty fields).
+            vehicle_text_fields = {
+                "chassisNumber": kw.get("chassis", "PN153BK3006001289"),
+                "engineNumber": kw.get("engine", "2AZ3028068"),
+                "engineCapacity": kw.get("engine_cc", "2362"),
+            }
+            for fid, val in vehicle_text_fields.items():
+                if await page.evaluate(
+                    """(id) => {
+                      const el = document.getElementById(id);
+                      return el ? (el.value || '').trim() : '';
+                    }""",
+                    fid,
+                ):
+                    self._log(f"skip {fid}: already populated by plate lookup")
+                    continue
+                el = page.locator(f"#{fid}")
+                await el.fill(val)
+                await el.blur()
+                await page.wait_for_timeout(250)
+
+            # Applicant selects — always fill.
+            applicant_selects = {
                 "proposalTitle": "Mr",
-                "vehicleBodyType": "SEDAN",
                 "antiTheftDevice": "No Alarm",
                 "safetyFeature": "ABS & Airbags (more than 2)",
                 "garage": "Locked Garage",
                 "proposalMarital": "Single",
                 "proposalStateApplicant": "KUALA LUMPUR",
+                "number_Claims": "0",
+            }
+            applicant_selects.update(kw.get("selects", {}))
+            for fid, target in applicant_selects.items():
+                await self._pick_auto(fid, target)
+
+            # Vehicle selects — fill ONLY if empty (plate lookup provides them
+            # for real vehicles).
+            vehicle_selects = {
+                "vehicleBodyType": "SEDAN",
                 "vehicleIndicator": "LOCAL MANUFACTURE",
                 "vehicleCoverageType": "COMPREHENSIVE",
             }
-            selects.update(kw.get("selects", {}))
-            for fid, target in selects.items():
+            vehicle_selects.update(kw.get("vehicle_selects", {}))
+            for fid, target in vehicle_selects.items():
+                if await page.evaluate(
+                    """(id) => {
+                      const el = document.getElementById(id);
+                      if (!el) return '';
+                      const t = el.querySelector('.mat-select-value-text');
+                      return ((t ? t.innerText : el.innerText) || '').trim();
+                    }""",
+                    fid,
+                ):
+                    self._log(f"skip {fid}: already populated by plate lookup")
+                    continue
                 await self._pick_auto(fid, target)
 
-            # numeric + year + make/model
+            # numeric + year — vehicle fields, fill only if empty
             for fid, val in [("seatingCapacity", "5"), ("yearManufacture", "2024")]:
+                if await page.evaluate(
+                    """(id) => {
+                      const el = document.getElementById(id);
+                      return el ? (el.value || '').trim() : '';
+                    }""",
+                    fid,
+                ):
+                    self._log(f"skip {fid}: already populated by plate lookup")
+                    continue
                 el = page.locator(f"#{fid}")
                 await el.fill(str(val))
                 await el.blur()
                 await page.wait_for_timeout(300)
-            await self._pick_auto("vehicleMake", kw.get("make", "TOYOTA"))
-            await self._pick_auto("vehicleModel", kw.get("model", "CAMRY"))
-            await self._pick_auto("number_Claims", "0")
+            # make/model — pick only if empty (real plates auto-populate)
+            for fid, target in [("vehicleMake", kw.get("make", "TOYOTA")),
+                                ("vehicleModel", kw.get("model", "CAMRY"))]:
+                if await page.evaluate(
+                    """(id) => {
+                      const el = document.getElementById(id);
+                      if (!el) return '';
+                      const t = el.querySelector('.mat-select-value-text');
+                      return ((t ? t.innerText : el.innerText) || '').trim();
+                    }""",
+                    fid,
+                ):
+                    self._log(f"skip {fid}: already populated by plate lookup")
+                    continue
+                await self._pick_auto(fid, target)
 
             # dates via JS setter
             for fid, val in [("start-date", kw.get("start_date", "10 Sep 2026")),

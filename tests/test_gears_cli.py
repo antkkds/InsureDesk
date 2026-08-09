@@ -76,7 +76,8 @@ class TestBuildResult:
         assert set(r) == {
             "ok", "status", "quote_id", "quote_url", "step", "referred",
             "market_available", "send_ready", "saved", "save_status",
-            "doc_name", "version", "error", "elapsed",
+            "doc_name", "version", "send_status", "send_email", "send_http",
+            "error", "elapsed",
         }
         assert r["ok"] is False
 
