@@ -74,13 +74,42 @@ class QuoteCapabilityHandler(CapabilityHandler):
 
         try:
             registry = ToolRegistry.get_instance()
-            # Lazy-register the existing quote tools if not present (thin
-            # layer — never replaces the ToolRegistry).
-            if not registry.has_tool("create_quote"):
-                from src.tools.insurance.quote_tools import register_all_quote_tools
+            # Lazy-register quote tools if not present (thin layer — never
+            # replaces the ToolRegistry). Prefer the REAL portal executor
+            # (calculate_quote) when available; fall back to the simulation
+            # tools (create_quote) otherwise.
+            if not registry.has_tool("calculate_quote") and not registry.has_tool("create_quote"):
+                try:
+                    # Desktop build: real portal executor (CalculateQuoteTool)
+                    from src.tools.defaults import register_all_tools
 
-                register_all_quote_tools(registry)
-            result = await registry.execute("create_quote", **arguments)
+                    register_all_tools(registry)
+                except ImportError:
+                    pass
+                if not registry.has_tool("calculate_quote"):
+                    try:
+                        # WSL dev build: simulation quote tools
+                        from src.tools.insurance.quote_tools import register_all_quote_tools
+
+                        register_all_quote_tools(registry)
+                    except ImportError:
+                        # Neither tool set present — let execution surface
+                        # the tool-not-found error clearly.
+                        pass
+            tool_name = "calculate_quote" if registry.has_tool("calculate_quote") else "create_quote"
+            if tool_name == "calculate_quote":
+                # Real portal execution needs a browser engine. If the tool
+                # registry has no context, lazily create one (Chrome CDP).
+                try:
+                    from src.browser import create_browser_engine
+                    from src.portal.form_engine import FormEngine
+
+                    engine = create_browser_engine()
+                    arguments = dict(arguments)
+                    arguments.setdefault("_form_engine", FormEngine(engine))
+                except Exception:
+                    pass
+            result = await registry.execute(tool_name, **arguments)
             if not result.success:
                 return reporter.failed(
                     result.error or "create_quote failed",

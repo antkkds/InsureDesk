@@ -1,0 +1,84 @@
+# GEGLink Portal Profile — selectors only
+# Portal metadata (name, URLs, adapter) lives in portals/great_eastern.yaml
+# Auto-captured on 2025-07-27
+
+version: "1.0"
+captured_at: "2025-07-27T00:00:00"
+portal: great_eastern
+
+pages:
+  login:
+    description: "GEGLink login page"
+    url_pattern: "/userlogin.html"
+    elements:
+      username:
+        selector: "input[name='oac_username']"
+        best_selector: "input[name='oac_username']"
+        tag: input
+        input_type: text
+      password:
+        selector: "input[name='oac_intpwd']"
+        best_selector: "input[name='oac_intpwd']"
+        tag: input
+        input_type: password
+      password_alt:
+        selector: "#txt_loginpass"
+        best_selector: "#txt_loginpass"
+        tag: input
+        input_type: password
+      submit:
+        selector: "input[src*='loginbut.jpg']"
+        best_selector: "input[src*='loginbut.jpg']"
+        tag: input
+        input_type: image
+
+  pdpa:
+    description: "PDPA terms acceptance page"
+    url_pattern: "/pdpa-terms"
+    elements:
+      accept_button:
+        selector: "input[value='I Agree']"
+        best_selector: "input[value='I Agree']"
+        tag: input
+
+  dashboard:
+    description: "GEGLink main dashboard"
+    url_pattern: "/home"
+    elements:
+      welcome_message:
+        selector: ".welcome-message"
+        best_selector: ".welcome-message"
+        tag: div
+      logout_link:
+        selector: "a:has-text('Logout')"
+        best_selector: "a:has-text('Logout')"
+        tag: a
+      user_profile:
+        selector: ".user-profile-name"
+        best_selector: ".user-profile-name"
+        tag: span
+
+  get_quote:
+    description: "Get Quote page with eQuotation iframe"
+    url_pattern: "/get-quote"
+    elements:
+      iframe:
+        selector: "iframe[src*='agent_home']"
+        best_selector: "iframe[src*='agent_home']"
+        tag: iframe
+
+  my_profile:
+    description: "Agent profile page"
+    url_pattern: "/my-profile"
+
+  my_account:
+    description: "Agent account / commission page"
+    url_pattern: "/my-account"
+
+  my_client:
+    description: "Client list page"
+    url_pattern: "/my-client"
+
+  forms:
+    description: "Forms/downloads page"
+    url_pattern: "/forms"

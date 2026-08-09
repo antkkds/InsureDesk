@@ -36,7 +36,8 @@ class TestPortalMapping:
         assert m is not None
         assert m.name == "Great Eastern"
         assert m.short_name == "GE"
-        assert "login" in m.selectors
+        # Selectors may be in profile (profiles/geglink.yaml) or inline
+        assert m.profile == "geglink"
 
     def test_load_allianz(self):
         """Allianz mapping loads."""
@@ -60,27 +61,45 @@ class TestPortalMapping:
 
     def test_get_selector_by_path(self):
         """Get a nested selector by path."""
-        from src.portal.mapping import load_portal_mapping, get_selector
+        from src.portal.mapping import load_portal_mapping, load_portal_profile, get_selector
         m = load_portal_mapping("great_eastern")
+        # Try mapping inline first
         sel = get_selector(m, "login", "username")
-        assert sel == "#username"
+        if sel:
+            assert sel == "input[name='oac_username']"
+        else:
+            # Try profile
+            profile = load_portal_profile("geglink")
+            assert profile is not None
+            sel = profile.get_selector("login", "username")
+            assert sel == "input[name='oac_username']"
         sel = get_selector(m, "login", "nonexistent")
         assert sel is None
 
     def test_all_portals_have_required_login_fields(self):
         """Every portal has username + password + submit/login_button."""
-        from src.portal.mapping import load_portal_mapping, get_selector, list_available_portals
+        from src.portal.mapping import load_portal_mapping, load_portal_profile, get_selector, list_available_portals
         portals = list_available_portals()
         for p in portals:
             aid = p.get("adapter", p.get("file", "").replace(".yaml", ""))
             m = load_portal_mapping(aid)
-            assert get_selector(m, "login", "username"), f"{aid} missing login.username"
-            assert get_selector(m, "login", "password"), f"{aid} missing login.password"
-            assert get_selector(m, "login", "submit") or get_selector(m, "login", "login_button"), \
-                f"{aid} missing login.submit or login.login_button"
+            # Check inline selectors first
+            has_username = bool(get_selector(m, "login", "username"))
+            has_password = bool(get_selector(m, "login", "password"))
+            has_submit = bool(get_selector(m, "login", "submit") or get_selector(m, "login", "login_button"))
+            # If not inline, check profile
+            if not has_username and m and m.profile:
+                profile = load_portal_profile(m.profile)
+                if profile:
+                    has_username = bool(profile.get_selector("login", "username"))
+                    has_password = bool(profile.get_selector("login", "password"))
+                    has_submit = bool(profile.get_selector("login", "submit"))
+            assert has_username, f"{aid} missing login.username"
+            assert has_password, f"{aid} missing login.password"
+            assert has_submit, f"{aid} missing login.submit or login.login_button"
 
     def test_yaml_files_have_portal_and_selectors(self):
-        """Every YAML file has portal + selectors keys."""
+        """Every YAML file in portals/ has portal key (selectors optional with profiles)."""
         import yaml
         from pathlib import Path
         portals_dir = Path(__file__).resolve().parent.parent / "portals"
@@ -89,27 +108,54 @@ class TestPortalMapping:
                 data = yaml.safe_load(f)
             assert data is not None, f"{yf.name} is empty"
             assert "portal" in data, f"{yf.name} missing portal"
-            assert "selectors" in data, f"{yf.name} missing selectors"
             assert data["portal"].get("name"), f"{yf.name} missing portal.name"
             assert data["portal"].get("adapter"), f"{yf.name} missing portal.adapter"
+            # selectors may be in profile (inline or via profile key)
+            if "selectors" not in data:
+                assert data["portal"].get("profile"), \
+                    f"{yf.name} missing both selectors and portal.profile"
 
     def test_yaml_no_empty_selectors(self):
-        """No empty selector values in YAML."""
-        from src.portal.mapping import load_portal_mapping, list_available_portals
-        portals = list_available_portals()
-        for p in portals:
-            aid = p.get("adapter", p.get("file", "").replace(".yaml", ""))
-            m = load_portal_mapping(aid)
-            empty = []
-            def _check(d, path=""):
-                for k, v in d.items():
-                    p = f"{path}.{k}" if path else k
-                    if isinstance(v, dict):
-                        _check(v, p)
-                    elif isinstance(v, str) and not v:
-                        empty.append(p)
-            _check(m.selectors)
-            assert not empty, f"{aid} has empty selectors: {empty}"
+        """No empty selector values in YAML (checks both portals/ and profiles/)."""
+        from src.portal.mapping import load_portal_mapping, list_available_portals, ProfileData
+        from pathlib import Path
+        import yaml
+
+        # Check portals/
+        profiles_dir = Path(__file__).resolve().parent.parent / "profiles"
+        portals_dir = Path(__file__).resolve().parent.parent / "portals"
+        empty_selectors = []
+
+        # Check portals/ YAMLs that have inline selectors
+        for yf in sorted(portals_dir.glob("*.yaml")):
+            with open(yf) as f:
+                data = yaml.safe_load(f)
+            if data and "selectors" in data:
+                def _check(d, path=""):
+                    for k, v in d.items():
+                        p = f"{path}.{k}" if path else k
+                        if isinstance(v, dict):
+                            _check(v, p)
+                        elif isinstance(v, str) and not v:
+                            empty_selectors.append(f"{yf.name}:{p}")
+                _check(data["selectors"])
+
+        # Check profiles/
+        if profiles_dir.exists():
+            for yf in sorted(profiles_dir.glob("*.yaml")):
+                with open(yf) as f:
+                    data = yaml.safe_load(f)
+                if data and "pages" in data:
+                    for page_name, page_data in data["pages"].items():
+                        elements = page_data.get("elements") or {}
+                        for field_key, el in elements.items():
+                            sel = el.get("selector", "")
+                            if not sel:
+                                empty_selectors.append(
+                                    f"{yf.name}:{page_name}.{field_key}.selector"
+                                )
+
+        assert not empty_selectors, f"Empty selectors found:\n" + "\n".join(empty_selectors)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -359,10 +405,10 @@ class TestPortalWorkflow:
 
     def test_adapter_selector_resolution(self):
         """Adapter resolves selectors from mapping automatically."""
-        from src.portals.base import GreatEasternAdapter
-        adapter = GreatEasternAdapter()
+        from src.portals.great_eastern import GEGLinkAdapter
+        adapter = GEGLinkAdapter()
         sel = adapter.get_sel("login", "username")
-        assert sel == "#username"
+        assert sel == "input[name='oac_username']"
 
     def test_list_adapters_has_adapter_flag(self):
         """list_adapters shows has_adapter flag."""

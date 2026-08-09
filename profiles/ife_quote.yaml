@@ -1,0 +1,1362 @@
+version: '1.0'
+portal: great_eastern
+quote_channel: IFE
+captured_at: '2026-07-27T12:14:18'
+pages:
+  quote_form:
+    description: IFE quote form page
+    url_pattern: https://geglink.greateasterngeneral.com/geglink/getquote/fireQuote.html
+    elements:
+      fire.jpj_f_q_cov_start_date:
+        label: fire.jpj_f_q_cov_start_date
+        selector: '#f_period_from'
+        tag: input
+        field_type: text
+        required: true
+        placeholder: ''
+        max_length: 10
+      fire.jpj_f_q_cov_end_date:
+        label: fire.jpj_f_q_cov_end_date
+        selector: '#f_period_to'
+        tag: input
+        field_type: text
+        required: true
+        placeholder: ''
+        max_length: 10
+      fire.jpj_f_q_insured_name:
+        label: fire.jpj_f_q_insured_name
+        selector: '#f_insured_name'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      fire.jpj_f_q_add1:
+        label: fire.jpj_f_q_add1
+        selector: '#f_add1'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      fire.jpj_f_q_add2:
+        label: fire.jpj_f_q_add2
+        selector: '#f_add2'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      fire.jpj_f_q_add3:
+        label: fire.jpj_f_q_add3
+        selector: '#f_add3'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      fire.jpj_f_q_add4:
+        label: fire.jpj_f_q_add4
+        selector: '#f_add4'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      fire.jpj_f_q_add5:
+        label: fire.jpj_f_q_add5
+        selector: '#f_add5'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      fire.jpj_f_q_hp_ext:
+        label: fire.jpj_f_q_hp_ext
+        selector: '#hpExt'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 3
+      fire.jpj_f_q_hp_no:
+        label: '-'
+        selector: '#hpNo'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_home_ext:
+        label: fire.jpj_f_q_home_ext
+        selector: '#homeExt'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 3
+      fire.jpj_f_q_home_no:
+        label: '-'
+        selector: '#homeNo'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_off_ext:
+        label: fire.jpj_f_q_off_ext
+        selector: '#offExt'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 3
+      fire.jpj_f_q_off_no:
+        label: '-'
+        selector: '#offNo'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_tp_of_bld_cd:
+        label: fire.jpj_f_q_tp_of_bld_cd
+        selector: '#f_type_building'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: '0'
+          label: '- Select -'
+        - value: '1001'
+          label: 1001--Dwellings
+        - value: '1008'
+          label: 1008--Flats and Apartments (if with shops and/or businesses not exceeding
+            20% of the total floor area - Non-h
+        - value: '1102'
+          label: 1102--General merchandise
+        - value: '1106'
+          label: 1106--Departmental stores, emporiums, supermarkets, mini-markets  and
+            shopping complexes
+        - value: '1112'
+          label: 1112--Laundries/laundrettes and dry cleaners
+        - value: '1114'
+          label: 1114--Market/ Wholesale market (Wet)
+        - value: '1116'
+          label: 1116--Hair Dressing Salon/Beauty Salon
+        - value: '1118'
+          label: 1118--Signboard Maker/Frame Maker Premises
+        - value: '1202'
+          label: 1202--Hotels, boarding houses, rest houses and chalets
+        - value: '1204'
+          label: 1204--Office Buildings and contents - with not more than 50% of the
+            total floor area occupied for retai
+        - value: '1208'
+          label: 1208--Universities, colleges and schools
+        - value: '1210'
+          label: 1210--Research and Scientific Institutes and Laboratories
+        - value: '1212'
+          label: 1212--Hospitals, nursing homes, orphanages, welfare homes, veterinary
+            surgeries and animal hospitals
+        - value: '1214'
+          label: 1214--Doctor and dentists clinics/surgeries and consulting rooms
+        - value: '1216'
+          label: 1216--Religious institutions, libraries and museums
+        - value: '1218'
+          label: 1218--Funeral parlour and crematoria
+        - value: '1220'
+          label: 1220--Botanical and Zoological gardens and aquaria
+        - value: '1302'
+          label: 1302--Coal mines
+        - value: '1304'
+          label: 1304--Tin and other metal ores excluding dredges and underground
+            mines, stone and mineral quarries;clay,sand
+        - value: '1308'
+          label: 1308--Tin Smelting Works
+        - value: '1402'
+          label: 1402--Buildings in Course of Constrution (B.I.C.C) and materials
+            on site (Other than Woodworking ris
+        - value: '1410'
+          label: 1410--Plant Hire Contractors (Risks on premises only)
+        - value: '1420'
+          label: 1420--Silent industrial Risks
+        - value: '1422'
+          label: 1422--Unoccupied and Vacant Risks (other than silent industrial risks)
+        - value: '1502'
+          label: 1502--Dairy produce manufacture
+        - value: '1506'
+          label: 1506--Copra klins
+        - value: '1508'
+          label: 1508--Sago, tapioca and starch factories
+        - value: '1512'
+          label: 1512--Bakeries,biscuit,confectionery and candy manufacture
+        - value: '1514'
+          label: 1514--Meehoon, noodles and related products
+        - value: '1516'
+          label: 1516--Sauce and pickle factories
+        - value: '1518'
+          label: 1518--Animal food manufacture including feed mills
+        - value: '1520'
+          label: 1520--Poultry Farms (i.e. domestic fowls, ducks, geese, turkey, quails
+            etc.)
+        - value: '1521'
+          label: 1521--Animal Farms
+        - value: '1522'
+          label: 1522--Aquaculture
+        - value: '1524'
+          label: 1524--Abbatoir
+        - value: '1526'
+          label: 1526--Food Processing-Not otherwise classified
+        - value: '1602'
+          label: 1602--Distilleries
+        - value: '1604'
+          label: 1604--Breweries including Blending
+        - value: '1606'
+          label: 1606--Bottle/packed drinking water and soft drink manufacture
+        - value: '1702'
+          label: 1702--Tobacco, cigarette and cigar factories
+        - value: '1704'
+          label: 1704--Bonded stores for tobacco, cigarettes and cigars
+        - value: '1710'
+          label: 1710--Tobacco Buying and Curing Centres
+        - value: '1718'
+          label: 1718--Cured leaf grading,baling/packing,buying/selling sheds, store
+            and other buildings
+        - value: '1802'
+          label: 1802--Textiles mills; Spining mills and Thread makers (excluding
+            garment making)
+        - value: '1806'
+          label: 1806--Fabrics printing and dyeing including batik making
+        - value: '1808'
+          label: 1808--Garment makers
+        - value: '1810'
+          label: 1810--Mattress manufacture (excluding manufacturing of  foam, rubber
+            or plastic) and Uphols
+        - value: '1812'
+          label: 1812--Textile goods manufacture not otherwise classfied
+        - value: '1814'
+          label: 1814--Hosiery/knit-wear/lace manufacture
+        - value: '1816'
+          label: 1816--Silk manufacture
+        - value: '1818'
+          label: 1818--Carpet and rug mills/factories
+        - value: '1902'
+          label: 1902--Tanneries and leather finishers
+        - value: '1904'
+          label: 1904--Natural fibre goods manufacture (e.g brush,broom, etc)
+        - value: '1906'
+          label: 1906--Leather goods manufacture
+        - value: '1908'
+          label: 1908--Hair and feather processors, fur and skin dressers and manufacture
+            of goods therefrom
+        - value: '2002'
+          label: 2002--Logging camps including buildings and equipment
+        - value: '2004'
+          label: 2004--Sawmills (a) no burning of sawdust within  30 metres of the
+            nearest building f
+        - value: '2006'
+          label: 2006--Sawmills (b) otherwise
+        - value: '2008'
+          label: 2008--Plywood, Veneer, Laminated Board, Hardboard and other Particle
+            Board Factories:- (a) No b
+        - value: '2010'
+          label: 2010--Plywood, Veneer, Laminated Board, Hardboard and other Particle
+            Board Factories:- (b) Othe
+        - value: '2013'
+          label: 2013--Timber Impregnation Plant as a separate trade not part of any
+            sawmill/plywood factory
+        - value: '2015'
+          label: 2015--Furniture manufacture
+        - value: '2016'
+          label: 2016--Charcoal Manufacture
+        - value: '0000'
+          label: 2026--Timber Drying Kiln integrated with Sawmill and/or Plywood Factory
+        - value: '2028'
+          label: 2028--Independent Timber Drying Kiln:- (a) source of heating using
+            electric/solar power
+        - value: '2030'
+          label: 2030--Independent Timber Drying Kiln:- (b) source of heating  using
+            other than electric/solar pow
+        - value: '2036'
+          label: 2036--Bamboo, cane and rattan processing and manufacture
+        - value: '2102'
+          label: 2102--Carton, cardboard box manufacture
+        - value: '2104'
+          label: 2104--Paper products (including wallpaper) manufacture
+        - value: '2109'
+          label: 2109--Printers
+        - value: '2112'
+          label: 2112--Waste paper dealers and processors
+        - value: '2114'
+          label: 2114--Paper and cardboard mills
+        - value: '2118'
+          label: 2118--Toilet/ tissue paper manufacture
+        - value: '2120'
+          label: 2120--Waxed/laminated paper product manufacture
+        - value: '2128'
+          label: 2128--Cutting/Slitting/Shearing/Packing and Storing of Ready-Made
+            paper
+        - value: '2202'
+          label: 2202--Acid, alkali and dry ice manufacture
+        - value: '2204'
+          label: 2204--Compressed and liquified industrial and domestic gas  (other
+            than l.p.g.) manufacture:- (a) Non-flamm
+        - value: '2205'
+          label: 2205--Compressed and liquified industrial and domestic gas   (other
+            than l.p.g) manufacture:- (b
+        - value: '2206'
+          label: 2206--Fertilizers and pesticides manufacture including mixing blending,
+            bottling and bagging of f
+        - value: '0000'
+          label: 2208--Synthetic resins and basic plastic raw materials manufacture
+        - value: '2210'
+          label: 2210--Paint manufacture - emulsion/waterbased
+        - value: '2212'
+          label: 2212--Paint manufacture - otherwise
+        - value: '2214'
+          label: 2214--Medicinal and pharmaceutical preparations manufacture
+        - value: '2216'
+          label: 2216--Soaps and washing powder manufacture
+        - value: '2218'
+          label: 2218--Cosmetics manufacture:- a) non-solvent based
+        - value: '2219'
+          label: 2219--Cosmetics manufacture:- b) solvent based
+        - value: '2220'
+          label: 2220--Candles, waxes and polishes manufacture
+        - value: '0000'
+          label: 2222--Explosives and ammunition manufacture
+        - value: '2224'
+          label: 2224--Sensitized film manufacture including processing but excluding
+            celluloid films
+        - value: '2226'
+          label: 2226--Adhesive manufacture (a) using bituminous materials or solvents
+            having a flash point (closed-cup te
+        - value: '2228'
+          label: 2228--Adhesive manufacture (b) otherwise
+        - value: '2230'
+          label: 2230--Matches/fireworks/joss stick manufacture and storage
+        - value: '2232'
+          label: 2232--Other Chemical Products manufacture and storage not otherwise
+            classified
+        - value: '0000'
+          label: 2302--Petroleum refineries
+        - value: '0000'
+          label: 2304--Manufacture of products of petroleum and/or coal
+        - value: '0000'
+          label: 2306--Petro-chemical factories
+        - value: '0000'
+          label: 2308--Natural gas and crude petroleum production
+        - value: '2402'
+          label: 2402--Rubber smoke-house and rubber drying by artificial heat other
+            than  processes involving drying by steam
+        - value: '2404'
+          label: 2404--Rubber milling, blending, washing and cutting
+        - value: '2406'
+          label: 2406--Rubber drying (no drying by artificial heat)
+        - value: '2408'
+          label: 2408--Rubber drying by steam , hot water pipes or hot air supplied
+            from outside the building chambers heate
+        - value: '2410'
+          label: 2410--Rubber and foamed rubber goods godown (including baling and
+            packing) other than solely for
+        - value: '2412'
+          label: 2412--S.M.R production including drying and packing
+        - value: '2414'
+          label: 2414--Rubber goods mfr by the process of dipping moulds into latex
+            base compounds incl process of extruding
+        - value: '2416'
+          label: 2416--Tyre retreading and vulcanising
+        - value: '2418'
+          label: 2418--Foamed rubber goods manufacture
+        - value: '2420'
+          label: 2420--Latex bulking installation, Latex Collecting, Coagulating and
+            Concentrating Plant
+        - value: '2424'
+          label: 2424--Rubber Goods Manufacture (other than class codes 2414, 2416
+            & 2418)
+        - value: '2501'
+          label: 2501--Assy or Mfr of plastic goods from ready made plastics not involving  processing
+            of plastic resins or com
+        - value: '2502'
+          label: 2502--Plastic Goods Manufacture - Group A
+        - value: '2504'
+          label: 2504--Plastic Goods Manufacture - Group B
+        - value: '2506'
+          label: 2506--Plastic Goods Manufacture - Group C
+        - value: '2508'
+          label: 2508--Plastic Goods Manufacture - Group D  Expanded foam and expanded
+            plastics
+        - value: '0000'
+          label: 2510--Plastic Goods Manufacture - Group E  All other plastics including
+            nitroc
+        - value: '2512'
+          label: 2512--Plastic Recycling Plant
+        - value: '0000'
+          label: 2601--Cement factories
+        - value: '2602'
+          label: 2602--Pottery works,tiles,bricks,china,earthenware manufacture
+        - value: '2604'
+          label: 2604--Sheet and plate glass manufacture
+        - value: '2606'
+          label: 2606--Glass bottle manufacture
+        - value: '2608'
+          label: 2608--Optical instrument and lens manufacture
+        - value: '2610'
+          label: 2610--Cement/concrete products manufacture
+        - value: '2612'
+          label: 2612--Abrasive paper and powder manufacture
+        - value: '2614'
+          label: 2614--Other non-metallic mineral products manufacture not otherwise
+            classified
+        - value: '2702'
+          label: 2702--Smelting Works and Foundries
+        - value: '2703'
+          label: 2703--Rolling Mills and Structural Metal Works
+        - value: '2704'
+          label: '2704--Wire and cable manufacture: a) not insulated'
+        - value: '2706'
+          label: 2706--Treatment of metal products; Electroplating
+        - value: '2708'
+          label: 2708--Manufacture/assembly of electrical plant, machinery, tools,
+            equipment and appliances
+        - value: '2709'
+          label: 2709--Mfr/assembly of electronic components, equipment and appliances
+            & Semi-conductor risks  (excluding Wa
+        - value: '2710'
+          label: '2710--Wire and cable manufacture: b) insulated'
+        - value: '0000'
+          label: 2712--Shipbreakers' yards
+        - value: '2714'
+          label: 2714--Ship/Boat Builders and Repairers:- (a) Wooden/Fibreglass Hulls
+        - value: '2715'
+          label: 2715--Ship/Boat Builders and Repairers:- (b) Steel, Metal or Others
+        - value: '2716'
+          label: 2716--Manufacture/assembly of motor vehicles and cycles, bicycles,
+            trishaws and vehicle spar
+        - value: '0000'
+          label: 2718--Aircraft,aircraft engines and component manufacture
+        - value: '2720'
+          label: 2720--Manufacture/assembly of mechanical plant, machinery, tools,  equipment
+            and appliances, incl boil
+        - value: '2722'
+          label: 2722--Metal cans and containers manufacture
+        - value: '2724'
+          label: 2724--Metal screws and nails manufacture
+        - value: '2726'
+          label: 2726--Metal products manufacture not otherwise classified
+        - value: '2728'
+          label: 2728--Battery manufacture
+        - value: '2755'
+          label: 2755--Engineering Premises, Blacksmith (General Metal Works)
+        - value: '2802'
+          label: 2802--Motor vehicles and cycles, bicycles and agricultural implements
+            (premises used as showrooms and sal
+        - value: '2804'
+          label: 2804--Motor repair workshops, garages and service stations (without
+            spray painting)
+        - value: '2806'
+          label: 2806--Motor repairs workshops, garages and service stations (with
+            spray painting)
+        - value: '2808'
+          label: 2808--Motor vehicles in the open
+        - value: '2810'
+          label: 2810--Bus and coach depots:- (a) Without repairs and servicing
+        - value: '2811'
+          label: 2811--Bus and coach depots:- (b) With repairs and servicing
+        - value: '2812'
+          label: 2812--Car parks
+        - value: '2818'
+          label: 2818--Petrol stations
+        - value: '2902'
+          label: 2902--Coffee shops and Restaurants
+        - value: '2904'
+          label: 2904--Sauna, turkish baths and masage parlours
+        - value: '2905'
+          label: 2905--Social/cultural/political/athletic and sports clubs,water theme
+            parks
+        - value: '2908'
+          label: 2908--Night-clubs,bars,pubs,dance and musical halls
+        - value: '2914'
+          label: 2914--Amusement arcades/parks, billiard halls and snooker centres
+        - value: '0000'
+          label: 3002--National Electricity Utility (T.N.B)
+        - value: '0000'
+          label: 3004--Other Electricity Undertakings
+        - value: '0000'
+          label: 3006--Waste and garbage disposal plants
+        - value: '3008'
+          label: 3008--Power house/Generator House Pump House and substation in privately
+            own factories and/or undertaking solely
+        - value: '0000'
+          label: 3102--Docks, jetties, piers, wharves and water transport premises
+        - value: '3104'
+          label: 3104--Air transport premises including hangars
+        - value: '0000'
+          label: 3106--Land and Rail Transport
+        - value: '3302'
+          label: 3302--Cinemas and theatres
+        - value: '3304'
+          label: 3304--Radio, television transmitting stations and studios; Wireless
+            Paging Service Centres
+        - value: '3306'
+          label: 3306--Exhibitions, halls, trade fairs, other concert and meeting
+            halls and auctioneers' prem
+        - value: '3308'
+          label: 3308--Photographic, art and advertising studios
+        - value: '3402'
+          label: 3402--General Storage
+        - value: '3406'
+          label: 3406--a) Tank installations and/or buildings used for storage and/or
+            deposit and their contents
+        - value: '3408'
+          label: 3408--b) Barrels, tins or drums containing oils, etc,as above, in
+            the open and their contents
+        - value: '3410'
+          label: 3410--c) Empty barrels, tin or drums in the open
+        - value: '3412'
+          label: 3412--Storage of Properties/Goods in the Open not attached to any
+            bldg or pa  thereof & not situated within the c
+        - value: '3502'
+          label: 3502--Palm oil mills and/or refineries:- (a) Not using any solvent
+            extraction processes
+        - value: '3504'
+          label: 3504--Palm oil mills and/or refineries:- (b) Otherwise
+        - value: '3506'
+          label: 3506--c) Storage tanks and or contents therein at least 5 metres
+            detached from any other buildin
+        - value: '3508'
+          label: 3508--Vegetable oil mills and/or refineries (other than Palm oil
+            mills)  a) Not using any solvent extraction
+        - value: '3510'
+          label: 3510--Vegetable oil mills and/or refineries (other than Palm oil
+            mills)  b) Otherwise
+        - value: '3512'
+          label: 3512--c) Storage tanks and or contents therein at least 5 metres
+            detached from any other buildin
+        - value: '3602'
+          label: 3602--Rice and grain mills
+        - value: '3604'
+          label: 3604--Flour  mills
+        - value: '3702'
+          label: 3702--Sugar factories and refineries
+        - value: '3802'
+          label: 3802--Cocoa (excluding cocoa bean factories), chocolate and sugar
+            confectionery manufacture
+        - value: '3804'
+          label: 3804--Tea, cocoa bean and coffee factories
+        - value: '3902'
+          label: 3902--Cold Stores, ice (other than dry ice) factories and contents
+            subject to Cold Storage Clause (A)
+      fire.jpj_f_q_const_class_cd:
+        label: fire.jpj_f_q_const_class_cd
+        selector: '#f_const_Class'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: '0'
+          label: -Select-
+        - value: 1A
+          label: CLASS 1A CONSTRUCTION
+        - value: 1B
+          label: CLASS 1B CONSTRUCTION
+        - value: '2'
+          label: CLASS 2 CONSTRUCTION
+        - value: '3'
+          label: CLASS 3 CONSTRUCTION
+      fire.jpj_f_q_const_class_desc:
+        label: fire.jpj_f_q_const_class_desc
+        selector: '#f_const_Class_desc2'
+        tag: textarea
+        field_type: textarea
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_sum_in_building:
+        label: fire.jpj_f_q_sum_in_building
+        selector: '#f_building'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_sum_in_furniture:
+        label: fire.jpj_f_q_sum_in_furniture
+        selector: '#f_furniture'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_sum_in_plant:
+        label: fire.jpj_f_q_sum_in_plant
+        selector: '#f_plant'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_sum_in_office:
+        label: fire.jpj_f_q_sum_in_office
+        selector: '#f_office'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_sum_in_stock:
+        label: fire.jpj_f_q_sum_in_stock
+        selector: '#f_stock'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_sum_in_household:
+        label: fire.jpj_f_q_sum_in_household
+        selector: '#f_household'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_sum_in_debris:
+        label: fire.jpj_f_q_sum_in_debris
+        selector: '#f_debris'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_sum_in_rental:
+        label: fire.jpj_f_q_sum_in_rental
+        selector: '#f_rental'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_sum_in_arc:
+        label: fire.jpj_f_q_sum_in_arc
+        selector: '#f_arc'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      fire.jpj_f_q_other_lis:
+        label: Others
+        selector: '#f_oth_item'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 200
+      fire.jpj_f_q_sum_in_others:
+        label: fire.jpj_f_q_sum_in_others
+        selector: '#f_oth_lis'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      totalSumInsured:
+        label: totalSumInsured
+        selector: '#f_total_sum_insured'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_basic_fire_rate:
+        label: fire.jpj_f_q_basic_fire_rate
+        selector: '#f_basic_fire_r'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_basic_premium:
+        label: f_basic_premium
+        selector: '#f_basic_premium'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_aircraft:
+        label: fire.jpj_f_q_aircraft
+        selector: '#f_aircraft'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_aircraft_rate:
+        label: fire.jpj_f_q_aircraft_rate
+        selector: '#f_aircraft_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_aircraft_p:
+        label: f_aircraft_p
+        selector: '#f_aircraft_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_earthquake:
+        label: fire.jpj_f_q_earthquake
+        selector: '#f_earth'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_earthquake_rate:
+        label: fire.jpj_f_q_earthquake_rate
+        selector: '#f_earth_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_earth_p:
+        label: f_earth_p
+        selector: '#f_earth_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_storm:
+        label: fire.jpj_f_q_storm
+        selector: '#f_storm'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_storm_rate:
+        label: fire.jpj_f_q_storm_rate
+        selector: '#f_storm_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_storm_p:
+        label: f_storm_p
+        selector: '#f_storm_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_flood:
+        label: fire.jpj_f_q_flood
+        selector: '#f_flood'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_flood_rate:
+        label: fire.jpj_f_q_flood_rate
+        selector: '#f_flood_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_flood_p:
+        label: f_flood_p
+        selector: '#f_flood_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_indnboiler:
+        label: fire.jpj_f_q_indnboiler
+        selector: '#f_indnboiler'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_indnboiler_rate:
+        label: fire.jpj_f_q_indnboiler_rate
+        selector: '#f_indnboiler_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_indnboiler_p:
+        label: f_indnboiler_p
+        selector: '#f_indnboiler_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_indboiler:
+        label: fire.jpj_f_q_indboiler
+        selector: '#f_indboiler'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_indboiler_rate:
+        label: fire.jpj_f_q_indboiler_rate
+        selector: '#f_indboiler_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_indboiler_p:
+        label: f_indboiler_p
+        selector: '#f_indboiler_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_nindnboiler:
+        label: fire.jpj_f_q_nindnboiler
+        selector: '#f_nindnboiler'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_nindnboiler_rate:
+        label: fire.jpj_f_q_nindnboiler_rate
+        selector: '#f_nindnboiler_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_nindnboiler_p:
+        label: f_nindnboiler_p
+        selector: '#f_nindnboiler_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_nindboiler:
+        label: fire.jpj_f_q_nindboiler
+        selector: '#f_nindboiler'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_nindboiler_rate:
+        label: fire.jpj_f_q_nindboiler_rate
+        selector: '#f_nindboiler_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_nindboiler_p:
+        label: f_nindboiler_p
+        selector: '#f_nindboiler_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_exvehicles:
+        label: fire.jpj_f_q_exvehicles
+        selector: '#f_exvehicle'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_exvehicles_rate:
+        label: fire.jpj_f_q_exvehicles_rate
+        selector: '#f_exvehicle_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_exvehicle_p:
+        label: f_exvehicle_p
+        selector: '#f_exvehicle_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_invechiles:
+        label: fire.jpj_f_q_invechiles
+        selector: '#f_invehicle'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_invechiles_rate:
+        label: fire.jpj_f_q_invechiles_rate
+        selector: '#f_invehicle_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_invehicle_p:
+        label: f_invehicle_p
+        selector: '#f_invehicle_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_bldstoreys:
+        label: fire.jpj_f_q_bldstoreys
+        selector: '#f_buildingstoey'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_bldstoreys_rate:
+        label: fire.jpj_f_q_bldstoreys_rate
+        selector: '#f_buildingstoey_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_buildingstoey_p:
+        label: f_buildingstoey_p
+        selector: '#f_buildingstoey_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_others:
+        label: fire.jpj_f_q_others
+        selector: '#f_entensionothers'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_others_rate:
+        label: fire.jpj_f_q_others_rate
+        selector: '#f_entensionothers_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_entensionothers_p:
+        label: f_entensionothers_p
+        selector: '#f_entensionothers_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_electrical:
+        label: fire.jpj_f_q_electrical
+        selector: '#f_electrical'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_electrical_rate:
+        label: fire.jpj_f_q_electrical_rate
+        selector: '#f_electrical_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_electrical_p:
+        label: f_electrical_p
+        selector: '#f_electrical_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_electrical2:
+        label: fire.jpj_f_q_electrical2
+        selector: '#f_electrical2'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_electrical2_rate:
+        label: fire.jpj_f_q_electrical2_rate
+        selector: '#f_electrical2_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_electrical2_p:
+        label: f_electrical2_p
+        selector: '#f_electrical2_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_electrical3:
+        label: fire.jpj_f_q_electrical3
+        selector: '#f_electrical3'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_electrical3_rate:
+        label: fire.jpj_f_q_electrical3_rate
+        selector: '#f_electrical3_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_electrical3_p:
+        label: f_electrical3_p
+        selector: '#f_electrical3_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_bush:
+        label: fire.jpj_f_q_bush
+        selector: '#f_bush'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_bush_rate:
+        label: fire.jpj_f_q_bush_rate
+        selector: '#f_bush_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_bush_p:
+        label: f_bush_p
+        selector: '#f_bush_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_landslide:
+        label: fire.jpj_f_q_landslide
+        selector: '#f_landslide'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_landslide_rate:
+        label: fire.jpj_f_q_landslide_rate
+        selector: '#f_landslide_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_landslide_p:
+        label: f_landslide_p
+        selector: '#f_landslide_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_combustionfire:
+        label: fire.jpj_f_q_combustionfire
+        selector: '#f_combustionfire'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_combustionfire_rate:
+        label: fire.jpj_f_q_combustionfire_rate
+        selector: '#f_combustionfire_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_combustionfire_p:
+        label: f_combustionfire_p
+        selector: '#f_combustionfire_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_combustionfull:
+        label: fire.jpj_f_q_combustionfull
+        selector: '#f_combustionfull'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_combustionfull_rate:
+        label: fire.jpj_f_q_combustionfull_rate
+        selector: '#f_combustionfull_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_combustionfull_p:
+        label: f_combustionfull_p
+        selector: '#f_combustionfull_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_riot_residential:
+        label: fire.jpj_f_q_riot_residential
+        selector: '#f_riotresidential'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_riot_residential_rate:
+        label: fire.jpj_f_q_riot_residential_rate
+        selector: '#f_riotresidential_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_riotresidential_p:
+        label: f_riotresidential_p
+        selector: '#f_riotresidential_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_riot_others:
+        label: fire.jpj_f_q_riot_others
+        selector: '#f_riotothers'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_riot_others_rate:
+        label: fire.jpj_f_q_riot_others_rate
+        selector: '#f_riotothers_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_riotothers_p:
+        label: f_riotothers_p
+        selector: '#f_riotothers_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_damage:
+        label: fire.jpj_f_q_damage
+        selector: '#f_damage'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_damage_rate:
+        label: fire.jpj_f_q_damage_rate
+        selector: '#f_damage_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_damage_p:
+        label: f_damage_p
+        selector: '#f_damage_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_cold_storage:
+        label: fire.jpj_f_q_cold_storage
+        selector: '#f_cold_storage'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      fire.jpj_f_q_cold_storage_rate:
+        label: fire.jpj_f_q_cold_storage_rate
+        selector: '#f_cold_storage_rtmp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      f_cold_storage_p:
+        label: f_cold_storage_p
+        selector: '#f_cold_storage_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      totalExtRate:
+        label: totalExtRate
+        selector: '#f_tot_ext_r'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      totalExtPremium:
+        label: totalExtPremium
+        selector: '#f_tot_ext_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_load:
+        label: fire.jpj_f_q_load
+        selector: '#f_load'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 3
+      f_c_load:
+        label: f_c_load
+        selector: '#f_c_load'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      totalPremium:
+        label: totalPremium
+        selector: '#f_total_premium'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_service_tax_opt:
+        label: fire.jpj_f_q_service_tax_opt
+        selector: '#f_tax_opt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      f_c_tax:
+        label: f_c_tax
+        selector: '#f_c_tax'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_stamp_duty:
+        label: fire.jpj_f_q_stamp_duty
+        selector: '#f_stamp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      fire.jpj_f_q_grand_total_prem:
+        label: fire.jpj_f_q_grand_total_prem
+        selector: '#f_grand_total_p'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      field_109:
+        label: field_109
+        selector: input
+        tag: input
+        field_type: reset
+        required: true
+        placeholder: ''
+    actions:
+    - key: save
+      selector: '[value=''Save'']'
+      type: input

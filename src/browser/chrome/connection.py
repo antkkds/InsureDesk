@@ -154,7 +154,7 @@ class CdpConnection:
             self._listener_task.cancel()
             try:
                 await self._listener_task
-            except Exception:
+            except BaseException:
                 pass
             self._listener_task = None
         if self._ws:

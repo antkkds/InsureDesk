@@ -1,88 +1,11 @@
-# Great Eastern Malaysia (i-Connect) Portal Mapping
-# Each portal has selectors, URLs, and field mappings.
-# When GE changes their UI, update this file — no code changes needed.
+# Great Eastern General Insurance (GEGLink) Portal Mapping
+# Portal metadata only — selectors live in profiles/geglink.yaml
 
 portal:
   name: "Great Eastern"
   short_name: "GE"
-  base_url: "https://iconnect.greateasternlife.com"
-  login_url: "https://iconnect.greateasternlife.com/login"
+  base_url: "https://geglink.greateasterngeneral.com"
+  login_url: "https://geglink.greateasterngeneral.com/geglink/userlogin.html"
+  login_action: "https://geglink.greateasterngeneral.com/geglink/submitlogin.html"
   adapter: "great_eastern"
-
-selectors:
-  # ── Login ──
-  login:
-    username: "#username"
-    password: "#password"
-    submit: "button[type='submit']"
-    login_button: "#login-btn"
-    remember_me: "#remember"
-
-  # ── Dashboard / Post-login ──
-  dashboard:
-    welcome_message: ".welcome-message"
-    logout_link: "a:has-text('Logout')"
-    user_profile: ".user-profile-name"
-
-  # ── Policy Search ──
-  policy_search:
-    nav_link: "a:has-text('Policy')"
-    search_input: "input[name='policyNo']"
-    search_button: "button:has-text('Search')"
-    search_results: ".policy-search-results"
-    policy_row: ".policy-row"
-
-  # ── Policy Details ──
-  policy_details:
-    policy_number: ".policy-number"
-    status: ".policy-status"
-    premium: ".premium-amount"
-    start_date: ".start-date"
-    end_date: ".expiry-date"
-    coverage_section: ".coverage-details"
-    download_button: "button:has-text('Download')"
-
-  # ── Claims ──
-  claims:
-    nav_link: "a:has-text('Claims')"
-    new_claim_button: "button:has-text('New Claim')"
-    policy_no_field: "#policyNo"
-    incident_date: "#incidentDate"
-    claim_type: "#claimType"
-    description: "#description"
-    upload_evidence: "input[type='file']"
-    submit_button: "button:has-text('Submit')"
-    claim_status: ".claim-status"
-
-  # ── Document Upload ──
-  documents:
-    nav_link: "a:has-text('Documents')"
-    upload_button: "button:has-text('Upload')"
-    file_input: "input[type='file']"
-    document_type: "#docType"
-    submit_upload: "button:has-text('Confirm')"
-
-  # ── Renewal ──
-  renewal:
-    nav_link: "a:has-text('Renewal')"
-    renew_button: "button:has-text('Renew Now')"
-    confirm_renewal: "#confirm-renewal"
-    payment_method: "#paymentMethod"
-    complete_renewal: "button:has-text('Pay & Renew')"
-
-  # ── Customer Search ──
-  customer:
-    nav_link: "a:has-text('Customer')"
-    search_input: "input[name='customerId']"
-    search_result: ".customer-result"
-    customer_name: ".customer-name"
-    customer_ic: ".customer-ic"
-
-  # ── Quotation ──
-  quotation:
-    nav_link: "a:has-text('Quotation')"
-    product_select: "#productSelect"
-    customer_select: "#customerSelect"
-    calculate_button: "button:has-text('Calculate')"
-    premium_display: ".quoted-premium"
-    issue_button: "button:has-text('Issue Policy')"
+  profile: "geglink"         # references profiles/geglink.yaml

@@ -1,0 +1,640 @@
+version: '1.0'
+portal: great_eastern
+quote_channel: EQ
+captured_at: '2026-07-27T12:14:19'
+pages:
+  quote_form:
+    description: EQ quote form page
+    url_pattern: https://geglink.greateasterngeneral.com/geglink/getquote/houseQuote.html
+    elements:
+      houseQuote.jpj_h_q_cov_start_date:
+        label: houseQuote.jpj_h_q_cov_start_date
+        selector: '#fr_p_of_insurance'
+        tag: input
+        field_type: text
+        required: true
+        placeholder: ''
+        max_length: 10
+      houseQuote.jpj_h_q_cov_end_date:
+        label: houseQuote.jpj_h_q_cov_end_date
+        selector: '#to_p_of_insurance'
+        tag: input
+        field_type: text
+        required: true
+        placeholder: ''
+        max_length: 10
+      houseQuote.jpj_h_q_insured_name:
+        label: houseQuote.jpj_h_q_insured_name
+        selector: '#insured_name'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      houseQuote.jpj_h_q_add1:
+        label: houseQuote.jpj_h_q_add1
+        selector: '#add1'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      houseQuote.jpj_h_q_add2:
+        label: houseQuote.jpj_h_q_add2
+        selector: '#add2'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      houseQuote.jpj_h_q_add3:
+        label: houseQuote.jpj_h_q_add3
+        selector: '#add3'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      houseQuote.jpj_h_q_add4:
+        label: houseQuote.jpj_h_q_add4
+        selector: '#add4'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      houseQuote.jpj_h_q_add5:
+        label: houseQuote.jpj_h_q_add5
+        selector: '#add5'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 50
+      houseQuote.jpj_h_q_hp_ext:
+        label: houseQuote.jpj_h_q_hp_ext
+        selector: '#hpExt'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 3
+      houseQuote.jpj_h_q_hp_no:
+        label: '-'
+        selector: '#hpNo'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 10
+      houseQuote.jpj_h_q_home_ext:
+        label: houseQuote.jpj_h_q_home_ext
+        selector: '#homeExt'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 3
+      houseQuote.jpj_h_q_home_no:
+        label: '-'
+        selector: '#homeNo'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 10
+      houseQuote.jpj_h_q_off_ext:
+        label: houseQuote.jpj_h_q_off_ext
+        selector: '#offExt'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 3
+      houseQuote.jpj_h_q_off_no:
+        label: '-'
+        selector: '#offNo'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 10
+      houseQuote.jpj_h_q_tp_of_bld_cd:
+        label: houseQuote.jpj_h_q_tp_of_bld_cd
+        selector: '#type_of_Building'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: '0'
+          label: -Select-
+        - value: '4001'
+          label: Dwellings - Detached and Non-Detached
+        - value: '4005'
+          label: Dwellings - Flats and Apartments
+      houseQuote.jpj_h_q_const_class_cd:
+        label: houseQuote.jpj_h_q_const_class_cd
+        selector: '#const_Classification'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: '0'
+          label: -Select-
+        - value: 1A
+          label: 1A Brick;Hollow Block;Concrete;Cement
+        - value: 1B
+          label: 1B 1/2 Brick Wall;1/2 Non Combustible Materials
+        - value: '2'
+          label: 2 Part Brick/Wood; Open Sided Building
+        - value: '3'
+          label: 3 All Other Constr Not 1A;1B and 2
+      houseQuote.jpj_h_q_howner_sum_insured:
+        label: houseQuote.jpj_h_q_howner_sum_insured
+        selector: '#h_Owner_Sum_Insured'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      h_basic_Owner_Rate:
+        label: 'Basic Rate :'
+        selector: '#h_basic_Owner_Rate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext1:
+        label: RM
+        selector: '#h_Owner_Ext1'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext1_rate:
+        label: 'Rate:'
+        selector: '#h_Owner_Ext1_Rate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext1_opt:
+        label: houseQuote.jpj_h_q_howner_ext1_opt
+        selector: '#h_Owner_Ext1_Opt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      houseQuote.jpj_h_q_howner_ext2:
+        label: RM
+        selector: '#h_Owner_Ext2'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext2_rate:
+        label: 'Rate:'
+        selector: '#h_Owner_Ext2_Rate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext2_opt:
+        label: houseQuote.jpj_h_q_howner_ext2_opt
+        selector: '#h_Owner_Ext2_Opt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      houseQuote.jpj_h_q_howner_ext3:
+        label: RM
+        selector: '#h_Owner_Ext3'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext3_rate:
+        label: 'Rate:'
+        selector: '#h_Owner_Ext3_Rate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext3_opt:
+        label: houseQuote.jpj_h_q_howner_ext3_opt
+        selector: '#h_Owner_Ext3_Opt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      houseQuote.jpj_h_q_howner_ext4:
+        label: RM
+        selector: '#h_Owner_Ext4'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext4_rate:
+        label: 'Rate:'
+        selector: '[name=''houseQuote.jpj_h_q_howner_ext4_rate'']'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext4_opt:
+        label: houseQuote.jpj_h_q_howner_ext4_opt
+        selector: '#h_Owner_Ext4_Opt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      houseQuote.jpj_h_q_howner_ext5:
+        label: RM
+        selector: '#h_Owner_Ext5'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext5_rate:
+        label: 'Rate:'
+        selector: '#h_Owner_Ext5_Rate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_howner_ext5_opt:
+        label: houseQuote.jpj_h_q_howner_ext5_opt
+        selector: '#h_Owner_Ext5_Opt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      totalHouseOwnerExtRate:
+        label: 'Total Perils :'
+        selector: '#totalHouseOwnerExtRate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      totalOwnerExt:
+        label: totalOwnerExt
+        selector: '#H_Owner_Total_Ext'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 30
+      houseQuote.jpj_h_q_howner_rate:
+        label: 'Total Payable :'
+        selector: '#h_Owner_Rate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      temp_h_Owner_Rate:
+        label: temp_h_Owner_Rate
+        selector: '#temp_h_Owner_Rate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_lst_cnt_opt:
+        label: houseQuote.jpj_h_q_hholder_lst_cnt_opt
+        selector: '#rdContent'
+        tag: input
+        field_type: radio
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_sum_insured:
+        label: houseQuote.jpj_h_q_hholder_sum_insured
+        selector: '#hholder_lump_sum_insured'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 16
+      ufhholderRate:
+        label: 'Basic Rate :'
+        selector: '#ufhholderRate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_electrical:
+        label: houseQuote.jpj_h_q_hholder_electrical
+        selector: '#hholder_Elec_App'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      houseQuote.jpj_h_q_hholder_furniture:
+        label: houseQuote.jpj_h_q_hholder_furniture
+        selector: '#hholder_F_Fittings'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      houseQuote.jpj_h_q_hholder_kitchen:
+        label: houseQuote.jpj_h_q_hholder_kitchen
+        selector: '#hholder_K_Utensils'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      houseQuote.jpj_h_q_hholder_personal:
+        label: houseQuote.jpj_h_q_hholder_personal
+        selector: '#hholder_P_Effects'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      houseQuote.jpj_h_q_hholder_jewel:
+        label: houseQuote.jpj_h_q_hholder_jewel
+        selector: '#hholder_Jewellery'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      houseQuote.jpj_h_q_hholder_othr_dscp:
+        label: houseQuote.jpj_h_q_hholder_othr_dscp
+        selector: '#hholder_Others_Dscp'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 100
+      houseQuote.jpj_h_q_hholder_othr:
+        label: houseQuote.jpj_h_q_hholder_othr
+        selector: '#hholder_Others'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+        max_length: 9
+      totalHolderListContent:
+        label: totalHolderListContent
+        selector: '#hholder_T_Sum_Ins_Contents'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      hholder_tot_sum_insured:
+        label: hholder_tot_sum_insured
+        selector: '#hholder_tot_sum_insured'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_ext1:
+        label: RM
+        selector: '#hholder_Ext1'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_ext1_rate:
+        label: 'Rate:'
+        selector: '#hholder_R_Ext1'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_ext1_opt:
+        label: houseQuote.jpj_h_q_hholder_ext1_opt
+        selector: '#hholder_RExt1_Opt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      houseQuote.jpj_h_q_hholder_ext2:
+        label: RM
+        selector: '#hholder_Ext2'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_ext2_rate:
+        label: 'Rate:'
+        selector: '#hholder_R_Ext2'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_ext2_opt:
+        label: houseQuote.jpj_h_q_hholder_ext2_opt
+        selector: '#hholder_RExt2_Opt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      houseQuote.jpj_h_q_hholder_ext3:
+        label: RM
+        selector: '#hholder_Ext3'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_ext3_rate:
+        label: 'Rate:'
+        selector: '#hholder_R_Ext3'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_ext3_opt:
+        label: houseQuote.jpj_h_q_hholder_ext3_opt
+        selector: '#hholder_RExt3_Opt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      houseQuote.jpj_h_q_hholder_ext4:
+        label: RM
+        selector: '#hholder_Ext4'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_ext4_rate:
+        label: 'Rate:'
+        selector: '#hholder_R_Ext4'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_ext4_opt:
+        label: houseQuote.jpj_h_q_hholder_ext4_opt
+        selector: '#hholder_RExt4_Opt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      totalHouseHolderExt:
+        label: totalHouseHolderExt
+        selector: '#totalHouseHolderExt'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      totalHolderExt:
+        label: totalHolderExt
+        selector: '#H_Holder_Total_Ext'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_hholder_rate:
+        label: houseQuote.jpj_h_q_hholder_rate
+        selector: '#hholder_Rate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      temp_hholder_Rate:
+        label: temp_hholder_Rate
+        selector: '#temp_hholder_Rate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      P_hOwner:
+        label: P_hOwner
+        selector: '#P_hOwner'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      P_hOwnerRate:
+        label: P_hOwnerRate
+        selector: '#P_hOwnerRate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      totalOthHouseOwner:
+        label: totalOthHouseOwner
+        selector: '#P_TothOwner'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      P_hHolder:
+        label: P_hHolder
+        selector: '#P_hHolder'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      P_hHolderRate:
+        label: P_hHolderRate
+        selector: '#P_hHolderRate'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      totalOthHouseHolder:
+        label: totalOthHouseHolder
+        selector: '#P_TothHolder'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      P_ToTHOwnerHolder:
+        label: P_ToTHOwnerHolder
+        selector: '#P_ToTHOwnerHolder'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_prem_service_tax_opt:
+        label: houseQuote.jpj_h_q_prem_service_tax_opt
+        selector: '#p_ServiceTaxOpt'
+        tag: select
+        field_type: select
+        required: false
+        placeholder: ''
+        options:
+        - value: N
+          label: 'No'
+        - value: Y
+          label: 'Yes'
+      houseQuote.jpj_h_q_prem_service_tax:
+        label: houseQuote.jpj_h_q_prem_service_tax
+        selector: '#p_Tot_Service_Tax'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_prem_stamp_duty:
+        label: houseQuote.jpj_h_q_prem_stamp_duty
+        selector: '#p_Stamp_Duty'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+      houseQuote.jpj_h_q_prem_grand_total:
+        label: houseQuote.jpj_h_q_prem_grand_total
+        selector: '#p_Grand_Total_Prem'
+        tag: input
+        field_type: text
+        required: false
+        placeholder: ''
+    actions:
+    - key: save
+      selector: '[value=''Save'']'
+      type: input
+    - key: reset
+      selector: '[value=''Reset'']'
+      type: input

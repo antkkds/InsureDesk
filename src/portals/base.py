@@ -9,11 +9,28 @@ Base adapter + concrete implementations using:
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass, field
+from enum import Enum
 
 from src.portal.mapping import load_portal_mapping, get_selector, list_available_portals, PortalMapping
 from src.portal.form_engine import FormEngine
 from src.portal.session import SessionManager
 from src.browser.driver import BrowserEngine
+
+
+class SessionMode(Enum):
+    """Operating mode for portal adapters.
+
+    READ_ONLY:  Only navigate/capture/scan permitted.
+                calculate/save_draft/submit raise ReadOnlyViolationError.
+    READ_WRITE: Full access (default).
+    """
+    READ_ONLY = "read_only"
+    READ_WRITE = "read_write"
+
+
+class ReadOnlyViolationError(RuntimeError):
+    """Raised when a write operation is attempted in READ_ONLY mode."""
+    pass
 
 
 @dataclass
@@ -34,7 +51,8 @@ class PortalAdapter(ABC):
     """
 
     def __init__(self, mapping: Optional[PortalMapping] = None,
-                 engine: Optional[BrowserEngine] = None):
+                 engine: Optional[BrowserEngine] = None,
+                 mode: SessionMode = SessionMode.READ_WRITE):
         # Auto-load mapping from adapter_name if not provided
         if mapping is None:
             mapping = load_portal_mapping(self.adapter_name)
@@ -43,6 +61,24 @@ class PortalAdapter(ABC):
         self.form = FormEngine(engine)
         self.session = SessionManager()
         self._logged_in = False
+        self._mode = mode
+
+    @property
+    def mode(self) -> SessionMode:
+        """Current session mode (READ_ONLY or READ_WRITE)."""
+        return self._mode
+
+    @mode.setter
+    def mode(self, new_mode: SessionMode):
+        self._mode = new_mode
+
+    def _assert_write_permitted(self):
+        """Raise ReadOnlyViolationError if in READ_ONLY mode."""
+        if self._mode == SessionMode.READ_ONLY:
+            raise ReadOnlyViolationError(
+                f"Write operation denied: adapter '{self.adapter_name}' is in READ_ONLY mode. "
+                "Set mode=READ_WRITE or create a new adapter instance with mode=READ_WRITE."
+            )
 
     @property
     def engine(self) -> Optional[BrowserEngine]:
@@ -73,9 +109,30 @@ class PortalAdapter(ABC):
         return ""
 
     def get_sel(self, *path: str) -> str:
-        """Get a selector from the mapping by path."""
+        """Get a selector by path.
+
+        Priority:
+        1. Portal mapping inline selectors (legacy)
+        2. Portal profile (profiles/<name>.yaml)
+        """
+        # Try mapping inline selectors first (legacy)
         sel = get_selector(self.mapping, *path)
-        return sel or ""
+        if sel:
+            return sel
+
+        # Try profile-based selectors
+        profile_name = getattr(self.mapping, "profile", "")
+        if profile_name:
+            from src.portal.mapping import load_portal_profile
+            profile = load_portal_profile(profile_name)
+            if profile:
+                # path is like ('login', 'username') → page='login', field='username'
+                if len(path) >= 2:
+                    sel = profile.get_selector(path[0], path[1])
+                    if sel:
+                        return sel
+
+        return ""
 
     # ── Connection ──
 

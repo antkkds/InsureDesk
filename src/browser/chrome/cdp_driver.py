@@ -463,7 +463,7 @@ class ChromeCDPDriver(BrowserEngine):
         if self._conn:
             try:
                 await self._conn.close()
-            except Exception:
+            except BaseException:
                 pass
 
         # Activate tab

@@ -86,7 +86,8 @@ def create_tab(port: int, url: str = "about:blank") -> Optional[TabInfo]:
         import urllib.parse
         encoded_url = urllib.parse.quote(url, safe="")
         req = urllib.request.Request(
-            f"http://localhost:{port}/json/new?{encoded_url}"
+            f"http://localhost:{port}/json/new?{encoded_url}",
+            method="PUT",
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
             target = json.loads(resp.read().decode())

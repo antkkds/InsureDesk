@@ -1,0 +1,34 @@
+version: '1.0'
+portal: great_eastern
+quote_channel: GENERAL
+captured_at: '2026-07-27T12:10:07'
+pages:
+  get_quote:
+    description: get_quote form page
+    url_pattern: https://geglink.greateasterngeneral.com/geglink/userlogin.html
+    elements:
+      agency_code:
+        label: ''
+        selector: '[name="agency_code"]'
+        tag: input
+        field_type: text
+        required: false
+      piam_no:
+        label: ''
+        selector: '#txt_piam_no'
+        tag: input
+        field_type: text
+        required: false
+      oac_username:
+        label: ''
+        selector: '[name="oac_username"]'
+        tag: input
+        field_type: text
+        required: false
+      oac_intpwd:
+        label: ''
+        selector: '#txt_loginpass'
+        tag: input
+        field_type: password
+        required: false
+        max_length: '8'
