@@ -20,9 +20,11 @@ Known pitfalls (all discovered live):
   - marketValue is a disabled input: fill via native setter + input/change
     events (JS), NOT Playwright fill
   - start-date/end-date same: native setter
-  - btn_0/btn_1 radio = hire-purchase Yes/No → answer NO (btn_1) like the
-    Send-OK quote 2eed392c; answering YES demands a company field that never
-    renders (portal bug) — deadlock
+  - hire purchase: btn_0/btn_1 = Yes/No radio (name=radioBasic). Answer NO
+    (btn_1) → no company field; answer YES (btn_0) → #hirePurchaseCompany
+    autocomplete renders and must be filled (verified live: typing "C" lists
+    CIMB BANK BERHAD etc). `hire_purchase` is an explicit business input —
+    never force No to bypass the field. Both paths verified.
   - PDS email button (#emailPDSandPDPN) needs the declaration checkbox first;
     manual-vehicle quotes email directly (no NVIC dialog), auto-lookup quotes
     (e.g. WKL1234) show an NVIC variant dialog → click Select
@@ -31,6 +33,11 @@ Known pitfalls (all discovered live):
   - TEST123 manual path lacks NVIC → market lookup returns {"result":[]} →
     quote stays incomplete → no send-application button. Send needs a
     complete quote (real new vehicle data in production).
+
+JS-unlock guardrail (ChatGPT review 2026-08-09): every disabled-field write
+goes through JS_FIELD_CONTRACT allowlist — a field not listed fails closed
+(no silent bypass). Setter uses framework-compatible native setter +
+input/change events; value is read back and verified after write.
 
 Usage:
     creator = GearsQuoteCreator(page)
@@ -46,6 +53,44 @@ from typing import Any, Optional
 
 DASH_URL = "https://gears-my.greateasterngeneral.com/MY/AgencySales/quotations/dashboard"
 
+# ---------------------------------------------------------------------------
+# JS-unlock field contract (ChatGPT review guardrail). Every write to a
+# disabled/JS-managed field MUST be allowlisted here; anything else fails
+# closed instead of silently bypassing the portal's UI state.
+#   setter: "native_setter"  → HTMLInputElement value setter + input/change
+#           "click_unlock"   → el.disabled=false + click (autocomplete)
+# ---------------------------------------------------------------------------
+JS_FIELD_CONTRACT: dict[str, dict[str, Any]] = {
+    "condition": {
+        "setter": "click_unlock",
+        "events": ["click"],
+        "note": "step1 condition autocomplete — disabled by Angular state",
+    },
+    "marketValue": {
+        "setter": "native_setter",
+        "events": ["input", "change"],
+        "note": "step2 market value — disabled input, value from NVIC/market API",
+    },
+    "start-date": {
+        "setter": "native_setter",
+        "events": ["input", "change"],
+        "note": "step2 policy start date — datepicker-managed input",
+    },
+    "end-date": {
+        "setter": "native_setter",
+        "events": ["input", "change"],
+        "note": "step2 policy end date — datepicker-managed input",
+    },
+}
+
+UNLOCKED_JS_FIELDS = frozenset(JS_FIELD_CONTRACT.keys())
+
+
+def normalize_field_value(value: str) -> str:
+    """Normalize a field value for comparison (locale formatting: 50,000 vs
+    50000, trailing .00, spaces)."""
+    return value.replace(",", "").replace(" ", "").replace(".00", "")
+
 
 @dataclass
 class QuoteCreateOutcome:
@@ -54,9 +99,16 @@ class QuoteCreateOutcome:
     quote_id: str = ""
     step: int = 0
     referred: bool = False
+    market_available: bool = True
     error: str = ""
     elapsed: float = 0.0
     ts: float = field(default_factory=time.time)
+
+    @property
+    def send_ready(self) -> bool:
+        """A quote can reach Send when it is NOT referred AND the portal's
+        market-value lookup had data for the vehicle (NVIC present)."""
+        return (not self.referred) and self.market_available and self.step >= 3
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -65,6 +117,8 @@ class QuoteCreateOutcome:
             "quote_id": self.quote_id,
             "step": self.step,
             "referred": self.referred,
+            "market_available": self.market_available,
+            "send_ready": self.send_ready,
             "error": self.error,
             "elapsed": round(self.elapsed, 1),
         }
@@ -82,6 +136,7 @@ class GearsQuoteCreator:
         self._page = page
         self._log = logger or (lambda msg: print(f"[create] {msg}", flush=True))
         self._t0 = time.monotonic()
+        self._market_available = True  # set by fill_step2 market probe
 
     # ------------------------------------------------------------------
     async def create_quote(self) -> QuoteCreateOutcome:
@@ -189,7 +244,20 @@ class GearsQuoteCreator:
         await self._page.wait_for_timeout(1000)
 
     async def _js_set_value(self, field_id: str, value: str) -> str:
-        return await self._page.evaluate(
+        """Set a JS-managed/disabled field value via the allowlisted contract.
+
+        Fails closed: field must be in JS_FIELD_CONTRACT, otherwise returns
+        'not-allowlisted' and does NOT write (no silent DOM bypass).
+        Verifies the written value by reading it back.
+        """
+        if field_id not in UNLOCKED_JS_FIELDS:
+            self._log(f"js-set REFUSED {field_id}: not in field contract")
+            return "not-allowlisted"
+        contract = JS_FIELD_CONTRACT[field_id]
+        if contract["setter"] != "native_setter":
+            self._log(f"js-set REFUSED {field_id}: contract setter={contract['setter']}")
+            return "wrong-setter"
+        written = await self._page.evaluate(
             """(d) => {
               const el = document.getElementById(d.id);
               if (!el) return 'missing';
@@ -202,6 +270,20 @@ class GearsQuoteCreator:
             }""",
             {"id": field_id, "v": value},
         )
+        # verify read-back (native getter — sees the real DOM value)
+        got = await self._page.evaluate(
+            """(id) => {
+              const el = document.getElementById(id);
+              return el ? el.value : 'missing';
+            }""",
+            field_id,
+        )
+        if got != value:
+            # locale formatting can add separators (50,000 vs 50000) — normalize
+            if normalize_field_value(got) != normalize_field_value(value):
+                self._log(f"js-set MISMATCH {field_id}: wrote={value!r} readback={got!r}")
+                return f"mismatch:{got}"
+        return f"ok:{written}"
 
     # ------------------------------------------------------------------
     async def fill_step1(self, id_number: str = "881212145678",
@@ -298,13 +380,40 @@ class GearsQuoteCreator:
                              ("end-date", kw.get("end_date", "09 Sep 2027"))]:
                 await self._js_set_value(fid, val)
 
-            # hire purchase = NO (btn_1) — avoids the company-field deadlock
-            await page.evaluate(
-                """() => {
-                  const b = document.getElementById('btn_1');
-                  if (b && !b.checked) b.click();
-                }"""
-            )
+            # hire purchase — explicit business input (default: No).
+            # Yes (btn_0) → #hirePurchaseCompany autocomplete renders → must
+            # be filled; No (btn_1) → no company field. Never force No to
+            # bypass the field (ChatGPT review): both paths are real inputs.
+            if kw.get("hire_purchase", False):
+                await page.evaluate(
+                    """() => {
+                      const b = document.getElementById('btn_0');
+                      if (b && !b.checked) b.click();
+                    }"""
+                )
+                await page.wait_for_timeout(1500)
+                hp_company = kw.get("hire_purchase_company", "CIMB BANK BERHAD")
+                hp_rendered = False
+                for _ in range(5):
+                    if await page.evaluate(
+                        "() => !!document.getElementById('hirePurchaseCompany')"
+                    ):
+                        hp_rendered = True
+                        break
+                    await page.wait_for_timeout(1000)
+                if not hp_rendered:
+                    out.status = "ERROR"
+                    out.error = "step2: hire_purchase=Yes but #hirePurchaseCompany never rendered"
+                    return out
+                res = await self._pick_auto("hirePurchaseCompany", hp_company)
+                self._log(f"hire purchase YES → company: {res}")
+            else:
+                await page.evaluate(
+                    """() => {
+                      const b = document.getElementById('btn_1');
+                      if (b && !b.checked) b.click();
+                    }"""
+                )
             await page.wait_for_timeout(1000)
             # declaration checkbox
             await page.evaluate(
@@ -354,9 +463,44 @@ class GearsQuoteCreator:
                 }"""
             )
             await page.wait_for_timeout(1500)
-            # marketValue via JS setter
-            await self._js_set_value("marketValue", kw.get("market_value", "50000"))
-            await page.wait_for_timeout(1500)
+            # market availability probe (ChatGPT: encode the market-value-
+            # unavailable branch explicitly, do not let test data block the
+            # architecture). The portal's Check-market-value button queries
+            # NVIC market data; manual-vehicle quotes (TEST123) return 0/empty.
+            out.market_available = True
+            self._market_available = True
+            mv_probed = await page.evaluate(
+                """() => {
+                  const b = document.getElementById('check-market-value');
+                  if (b && !b.disabled) { b.click(); return true; }
+                  return false;
+                }"""
+            )
+            if mv_probed:
+                await page.wait_for_timeout(3500)
+                mv_probe = await page.evaluate(
+                    """() => {
+                      const el = document.getElementById('marketValue');
+                      return el ? el.value : '';
+                    }"""
+                )
+                if not mv_probe or mv_probe.strip() in ("0", "0.00", ""):
+                    out.market_available = False
+                    self._market_available = False
+                    self._log(
+                        "market value UNAVAILABLE (NVIC lookup empty) — "
+                        "manual override for test data; send_ready=False"
+                    )
+            # marketValue — keep portal-computed value when the NVIC lookup had
+            # data; only manual-override when market value is unavailable
+            # (test-data path).
+            if self._market_available:
+                self._log("market value available — keeping portal-computed value")
+            else:
+                await self._js_set_value(
+                    "marketValue", kw.get("market_value", "50000")
+                )
+                await page.wait_for_timeout(1500)
 
             # Continue → step 3 (may need 2 clicks)
             await self._click_btn("Continue")
@@ -387,7 +531,8 @@ class GearsQuoteCreator:
     async def fill_step3(self, add_ons: bool = True,
                          check_referral: bool = True) -> QuoteCreateOutcome:
         page = self._page
-        out = QuoteCreateOutcome(quote_url=page.url, step=3)
+        out = QuoteCreateOutcome(quote_url=page.url, step=3,
+                                 market_available=self._market_available)
         try:
             # reveal add-ons
             await self._click_btn("Continue")

@@ -83,6 +83,26 @@ class GearsQuoteSaver:
         self._page = page
         self._log = logger or (lambda msg: print(f"[save] {msg}", flush=True))
 
+    async def _close_blocking_overlay(self) -> None:
+        """Dismiss non-dialog overlays (review referral prompt / Ok toast)
+        that would block the Save-as-draft button click."""
+        try:
+            await self._page.evaluate(
+                """() => {
+                  const o = document.querySelector('.cdk-overlay-container');
+                  if (o) {
+                    const btns = Array.from(o.querySelectorAll('button'));
+                    const b = btns.find(x =>
+                      (x.innerText||'').includes('Continue with application') ||
+                      (x.innerText||'').trim() === 'Ok');
+                    if (b) b.click();
+                  }
+                }"""
+            )
+            await self._page.wait_for_timeout(1200)
+        except Exception:
+            pass
+
     # ------------------------------------------------------------------
     async def save_as_draft(self, expect_quote_id: Optional[str] = None,
                             attempt: int = 1) -> SaveOutcome:
@@ -95,14 +115,22 @@ class GearsQuoteSaver:
 
         # ---- 1. wait for + click "Save as draft" (the VISIBLE one; there is
         # also a hidden duplicate with class label-save). The Angular app may
-        # still be LOADING right after navigation — poll up to 15s. ----
+        # still be LOADING right after navigation — poll up to 15s.
+        # First close any blocking overlay (e.g. "Your application requires
+        # further review…" Continue with application / Ok) so the button is
+        # actually clickable. ----
+        await self._close_blocking_overlay()
         clicked = False
         try:
             deadline = time.monotonic() + 15
             while time.monotonic() < deadline:
                 for btn in await page.locator(f"button:has-text('{SAVE_BTN_TEXT}')").all():
                     if await btn.is_visible():
-                        await btn.click()
+                        try:
+                            await btn.click(timeout=3000)
+                        except Exception:
+                            # covered by overlay / not actionable → JS click
+                            await btn.evaluate("b => b.click()")
                         clicked = True
                         break
                 if clicked:
