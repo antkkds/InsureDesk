@@ -1,16 +1,19 @@
-"""Demo: run a GEARS quote step with session-expiry auto-recovery.
+"""Demo: run a GEARS quote step with session-expiry auto-recovery + Save.
 
 Shows the intended integration pattern for the quote pipeline:
     ensure_gears_session()          once at task start
     with_session_recovery(...)      wrap EVERY long-running step
+    GearsQuoteSaver.save_as_draft() structured save with PUT-level proof
 
 If the GEARS session dies mid-step (forcelogout / token expiry), the guard
 re-logins via GEGLink SSO and re-runs the step — the task continues instead
-of dying.
+of dying. Save returns a structured outcome (docName/version/status), not a
+UI-toast guess.
 
 Run:  python3 gears_quote_with_recovery_demo.py
 """
 import asyncio
+import json
 import sys
 
 from playwright.async_api import async_playwright
@@ -21,6 +24,9 @@ from gears_session_guard import (
     with_session_recovery,
     session_health,
 )
+
+sys.path.insert(0, "/home/antkk/InsureDesk")
+from src.quote.gears_save import GearsQuoteSaver
 
 # A saved draft quote from the verification run (TEST123 / FIONN LIANG)
 QUOTE_URL = ("https://gears-my.greateasterngeneral.com/MY/AgencySales/"
@@ -62,6 +68,13 @@ async def main():
                                          step_open_quote, page, QUOTE_URL)
         print(f"step result: {ok}")
         print(f"final health: {await session_health(page)}")
+
+        # 3. Save as draft — structured outcome (PUT-level proof)
+        saver = GearsQuoteSaver(page)
+        outcome = await saver.save_as_draft()
+        print("=== SAVE OUTCOME ===")
+        print(json.dumps(outcome.to_dict(), ensure_ascii=False, indent=1))
+        print("SAVE OK:", outcome.ok)
         await browser.close()
 
 
