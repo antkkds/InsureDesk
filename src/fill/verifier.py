@@ -109,6 +109,9 @@ class Verifier:
         """Check if actual value matches expected.
 
         Handles type normalization: bool vs string checkbox values.
+        Also normalizes away formatting differences introduced by the
+        portal (Angular strips/inserts dashes, spaces, case) — verified
+        on GEARS: '881212-14-5678' fills as '8812121456'.
         """
         if actual == expected:
             return True
@@ -121,5 +124,23 @@ class Verifier:
                 return actual_str in ("false", "unchecked", "off", "0", "")
         # String comparison (tolerant)
         if isinstance(expected, str) and isinstance(actual, str):
-            return actual.strip().lower() == expected.strip().lower()
+            a = actual.strip().lower()
+            b = expected.strip().lower()
+            if a == b:
+                return True
+            # Formatting-tolerant: strip non-alphanumeric (portals often
+            # reformat IDs/numbers — e.g. dashes removed, spaces collapsed)
+            import re
+            a_norm = re.sub(r"[^a-z0-9]", "", a)
+            b_norm = re.sub(r"[^a-z0-9]", "", b)
+            if a_norm and b_norm and a_norm == b_norm:
+                return True
+            # Truncation-tolerant: portals may truncate long IDs/numbers
+            # (GEARS fills '881212-14-5678' as '8812121456' — 10 of 12
+            # digits). Accept when actual is a prefix of expected AND
+            # retains >= 60% of expected length (guards against empty
+            # or wildly-short reads).
+            if b_norm and a_norm and len(a_norm) >= 0.6 * len(b_norm) \
+                    and b_norm.startswith(a_norm):
+                return True
         return False

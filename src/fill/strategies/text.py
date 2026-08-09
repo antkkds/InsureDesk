@@ -12,7 +12,11 @@ from src.fill.exceptions import FillTimeoutError, FillVerificationError
 
 
 class TextStrategy(FillStrategy):
-    """Strategy for <input type="text"> fields."""
+    """Strategy for <input type="text"> fields.
+
+    If the field declares options.autocomplete=true, delegates to
+    AutocompleteStrategy (Angular Material mat-autocomplete handling).
+    """
 
     async def fill(
         self,
@@ -22,6 +26,13 @@ class TextStrategy(FillStrategy):
     ) -> bool:
         if value is None:
             return True  # Nothing to fill
+
+        # Delegate Angular Material autocomplete fields
+        if field.options.get("autocomplete"):
+            from src.fill.strategies.autocomplete import AutocompleteStrategy
+            return await AutocompleteStrategy(verifier=self.verifier).fill(
+                browser, field, value
+            )
 
         value_str = str(value)
 

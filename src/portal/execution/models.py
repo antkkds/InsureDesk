@@ -213,6 +213,7 @@ class ExecutionResult:
     errors: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
     completed_steps: List[str] = field(default_factory=list)
+    trace: List[Any] = field(default_factory=list)  # TraceEvent dicts (save/fill observability)
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
@@ -226,6 +227,9 @@ class ExecutionResult:
             "errors": self.errors,
             "warnings": self.warnings,
             "completed_steps": self.completed_steps,
+            "trace": [
+                t.to_dict() if hasattr(t, "to_dict") else t for t in self.trace
+            ],
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
         }

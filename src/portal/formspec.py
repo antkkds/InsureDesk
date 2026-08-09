@@ -57,9 +57,24 @@ class FormFieldSpec(BaseModel):
     format: Optional[str] = None
     options: dict[str, Any] = Field(default_factory=dict)
     max_length: Optional[int] = None
-    # Status marker: "confirmed" (live capture) vs "needs_capture" (inferred id).
-    # Selectors marked needs_capture must be calibrated before live runs.
+    # Status gate (ChatGPT review 2026-08):
+    #   confirmed      — selector verified against live GEARS (locate→interact→read-back)
+    #   needs_capture  — reasonable inference, NOT yet live-verified
+    #   blocked        — attempted capture failed; selector/interaction model invalid
+    # HARD RULE: only confirmed fields may enter live execution.
     status: str = "confirmed"
+
+    @field_validator("status")
+    @classmethod
+    def _valid_status(cls, v: str) -> str:
+        if v not in ("confirmed", "needs_capture", "blocked"):
+            raise ValueError(f"status must be confirmed|needs_capture|blocked, got '{v}'")
+        return v
+
+    @property
+    def is_live_ready(self) -> bool:
+        """Only confirmed selectors may run against a live portal."""
+        return self.status == "confirmed"
 
     @field_validator("type")
     @classmethod
@@ -182,3 +197,28 @@ class MotorPrivateCarSpec(BaseModel):
         if sec is None:
             return []
         return [f.name for f in sec.fields if f.required]
+
+    def live_ready_fields(self, section_name: str) -> list[FormFieldSpec]:
+        """Fields allowed into live execution: status == confirmed only.
+
+        HARD RULE (ChatGPT review): needs_capture/blocked fields never
+        enter a live portal run. This is the calibration gate — run
+        capture first, then this list grows.
+        """
+        sec = self.section(section_name)
+        if sec is None:
+            return []
+        return [f for f in sec.fields if f.is_live_ready]
+
+    def live_schema(self, section_name: str) -> Optional[FillSchema]:
+        """FillSchema containing ONLY live-ready fields for a section.
+
+        Returns None if no fields are confirmed yet.
+        """
+        fields = self.live_ready_fields(section_name)
+        if not fields:
+            return None
+        return FillSchema(
+            name=section_name,
+            fields={f.name: f.to_field_definition() for f in fields},
+        )

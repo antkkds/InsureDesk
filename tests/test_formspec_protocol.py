@@ -144,7 +144,7 @@ class TestMotorPrivateCarSpec:
 
     def test_radio_options_preserved(self):
         fd = self.spec.field("quotation_details", "applicant_type").to_field_definition()
-        assert fd.options.get("values") == ["Individual", "Corporate"]
+        assert fd.options.get("values") == ["individual", "corporate"]
 
     def test_required_fields_helper(self):
         req = self.spec.required_fields("quotation_details")
@@ -173,3 +173,32 @@ class TestMotorPrivateCarSpec:
     def test_invalid_field_type_rejected(self):
         with pytest.raises(ValueError):
             FormFieldSpec(name="x", selector="#x", type="not_a_type")
+
+    def test_invalid_status_rejected(self):
+        with pytest.raises(ValueError):
+            FormFieldSpec(name="x", selector="#x", status="maybe")
+
+    def test_status_tristate_gate(self):
+        """confirmed only → live; needs_capture/blocked → excluded (hard rule)."""
+        c = FormFieldSpec(name="a", selector="#a", status="confirmed")
+        n = FormFieldSpec(name="b", selector="#b", status="needs_capture")
+        bl = FormFieldSpec(name="c", selector="#c", status="blocked")
+        assert c.is_live_ready is True
+        assert n.is_live_ready is False
+        assert bl.is_live_ready is False
+
+    def test_live_ready_fields_filters(self):
+        spec = MotorPrivateCarSpec.from_yaml_file(MOTOR_YAML)
+        # quotation_details: all confirmed → all live-ready
+        ready = spec.live_ready_fields("quotation_details")
+        assert len(ready) == len(spec.section("quotation_details").fields)
+        # owner: all needs_capture → none live-ready
+        assert spec.live_ready_fields("owner") == []
+
+    def test_live_schema_excludes_unconfirmed(self):
+        spec = MotorPrivateCarSpec.from_yaml_file(MOTOR_YAML)
+        schema = spec.live_schema("quotation_details")
+        assert schema is not None
+        assert "condition" in schema.fields
+        # owner section has no confirmed fields → None
+        assert spec.live_schema("owner") is None

@@ -87,6 +87,8 @@ class MockBrowser:
     async def get_attribute(self, selector: str, attr: str) -> Optional[str]:
         if attr == "checked":
             return "true" if self.checked.get(selector, False) else None
+        if attr == "value":
+            return self.values.get(selector)
         return None
 
     async def is_visible(self, selector: str) -> bool:

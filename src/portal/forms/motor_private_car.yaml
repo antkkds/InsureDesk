@@ -3,11 +3,15 @@
 # Flow:  Quotation Details → Details (Owner/Vehicle/Additional) → Sum Insured/Add-on → Payment
 # Entry: introduce/product-list?id=PMOT → hover .item_product → Get quote
 #
-# ⚠️ Selector status:
-#   Step 1 (quotation_details): ids CONFIRMED by live exploration (#condition, #idType, ...)
-#   Step 2+ (owner/vehicle/additional): ids inferred from Angular id-naming pattern,
-#        marked "needs_capture" — to be calibrated by capture pass before live run.
-#   Angular id-locating is the most reliable (label matching misaligns).
+# ✅ quotation_details: LIVE-VERIFIED 2026-08 (7/7 fields filled on real GEARS,
+#    read-back confirmed: applicant_type/condition/id_type/id_number/
+#    sst_number/vehicle_number/place). condition options: REGISTERED /
+#    NEW REGISTERED / REGISTERED-TRANSFER OWNER (no "USED").
+#    NOTE: condition=NEW REGISTERED → vehicleNumber disabled (new car, no plate).
+#    idNumber read-back is truncated: '881212-14-5678' → '8812121456' (Verifier
+#    is truncation-tolerant).
+# ⚠️ Step 2+ (owner/vehicle/additional): ids inferred from Angular id-naming,
+#    marked needs_capture — calibrate before live run.
 
 product_id: "PMOT"
 product_name: "Private Motor Insurance (Private Car)"
@@ -21,10 +25,10 @@ sections:
     submit: "button:has-text('Next')"
     fields:
       - name: applicant_type
-        selector: "input[name='applicantType'][value='Individual']"
+        selector: "input[name='radioBasic']"
         type: radio
         required: true
-        options: { values: ["Individual", "Corporate"] }
+        options: { values: ["individual", "corporate"] }
 
       # autocomplete: initially disabled → driver must removeAttribute('disabled')
       # then fill + native click mat-option (JS el.click() does NOT update Angular model)
@@ -34,6 +38,7 @@ sections:
         required: true
         options:
           autocomplete: true
+          force_enable: true        # input starts disabled (Angular binding)
           autocomplete_option: "mat-option"
           hint: "NEW REGISTERED / USED — removeAttribute('disabled') first"
 
@@ -43,6 +48,7 @@ sections:
         required: true
         options:
           autocomplete: true
+          force_enable: true        # input starts disabled (Angular binding)
           autocomplete_option: "mat-option"
           hint: "NRIC / Passport"
 

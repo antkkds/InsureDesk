@@ -18,6 +18,7 @@ from src.fill.engine import FillEngine
 from src.fill.schema import FillSchema, FieldDefinition, FieldType
 from src.portal.formspec import MotorPrivateCarSpec
 from tests.mock_browser import MockBrowser
+from tests.test_autocomplete_strategy import MockAutocompleteBrowser
 
 FORMS_DIR = os.path.join(os.path.dirname(__file__), "..", "src", "portal", "forms")
 MOTOR_YAML = os.path.join(FORMS_DIR, "motor_private_car.yaml")
@@ -25,7 +26,7 @@ MOTOR_YAML = os.path.join(FORMS_DIR, "motor_private_car.yaml")
 # Sample business data for a private car quote (same shape used in production)
 SAMPLE_DATA = {
     # quotation_details (confirmed selectors)
-    "applicant_type": "Individual",
+    "applicant_type": "individual",
     "condition": "USED",
     "id_type": "NRIC",
     "id_number": "881212-14-5678",
@@ -107,6 +108,27 @@ def _register_form_fields(browser: MockBrowser, schema: FillSchema) -> None:
                 for sel in values.values():
                     browser.register_selector(sel, found=True, visible=True)
                     browser.register_checkbox(sel, False)
+        elif fd.type == FieldType.TEXT and fd.options.get("autocomplete"):
+            # Simulate Angular mat-option panel for autocomplete fields
+            if hasattr(browser, "register_options"):
+                hint = fd.options.get("hint", "")
+                name = fd.name
+                if name == "nationality" or name == "country":
+                    browser.register_options(fd.selector, ["Malaysia", "Singapore"])
+                elif name == "state":
+                    browser.register_options(fd.selector, ["Wilayah Persekutuan", "Selangor"])
+                elif name == "make":
+                    browser.register_options(fd.selector, ["Toyota", "Honda", "Perodua"])
+                elif name == "model":
+                    browser.register_options(fd.selector, ["Vios", "City", "Myvi"])
+                elif name == "place_of_use":
+                    browser.register_options(fd.selector, ["Kuala Lumpur", "Selangor", "Penang"])
+                elif "REGISTERED" in hint:
+                    browser.register_options(fd.selector, ["NEW REGISTERED", "USED"])
+                elif "NRIC" in hint:
+                    browser.register_options(fd.selector, ["NRIC", "Passport"])
+                else:
+                    browser.register_options(fd.selector, ["Kuala Lumpur", "Selangor"])
 
 
 class TestFormSpecParity:
@@ -119,7 +141,7 @@ class TestFormSpecParity:
 
         # --- Path A: FormSpec-driven ---
         schema_a = spec.section("quotation_details").to_fill_schema()
-        browser_a = MockBrowser()
+        browser_a = MockAutocompleteBrowser()
         _register_form_fields(browser_a, schema_a)
         result_a = await engine.fill_section(browser_a, schema_a, SAMPLE_DATA)
 
@@ -137,7 +159,7 @@ class TestFormSpecParity:
                 for f in spec.section("quotation_details").fields
             },
         )
-        browser_b = MockBrowser()
+        browser_b = MockAutocompleteBrowser()
         _register_form_fields(browser_b, schema_b)
         result_b = await engine.fill_section(browser_b, schema_b, SAMPLE_DATA)
 
@@ -157,7 +179,7 @@ class TestFormSpecParity:
 
         for section in spec.sections:
             schema = section.to_fill_schema()
-            browser = MockBrowser()
+            browser = MockAutocompleteBrowser()
             _register_form_fields(browser, schema)
             result = await engine.fill_section(browser, schema, SAMPLE_DATA)
             assert result.success, (
@@ -171,7 +193,7 @@ class TestFormSpecParity:
         spec = MotorPrivateCarSpec.from_yaml_file(MOTOR_YAML)
         engine = FillEngine()
         schema = spec.section("quotation_details").to_fill_schema()
-        browser = MockBrowser()
+        browser = MockAutocompleteBrowser()
         _register_form_fields(browser, schema)
 
         data = dict(SAMPLE_DATA)
@@ -189,7 +211,7 @@ class TestFormSpecParity:
         spec = MotorPrivateCarSpec.from_yaml_file(MOTOR_YAML)
         engine = FillEngine()
         schema = spec.section("quotation_details").to_fill_schema()
-        browser = MockBrowser()
+        browser = MockAutocompleteBrowser()
         _register_form_fields(browser, schema)
 
         data = dict(SAMPLE_DATA)
@@ -207,7 +229,7 @@ class TestFormSpecParity:
         spec = MotorPrivateCarSpec.from_yaml_file(MOTOR_YAML)
         engine = FillEngine()
         schema = spec.section("quotation_details").to_fill_schema()
-        browser = MockBrowser()
+        browser = MockAutocompleteBrowser()
         _register_form_fields(browser, schema)
 
         data = dict(SAMPLE_DATA)
