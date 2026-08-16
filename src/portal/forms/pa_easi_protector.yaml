@@ -1,0 +1,202 @@
+# GEARS — Easi Protector Personal Accident (PEP) FormSpec
+# Source: gears_research/pa_recon.md (2026-08-15, live-verified read-only E2E)
+# Flow:  Coverage details → Plans → Details → Payment
+# Entry: introduce → #product-class-PA → product-list?id=PA → first "Get quote"
+#        (Easi Protector listed first) → /quotations/PA/PEP/{uuid}/detail
+#
+# ✅ LIVE-VERIFIED 2026-08-15 (read-only E2E via scripts/gears_pa_cli.py):
+#    EP1 → MYR 182.80, EP3 → MYR 257.32. Never Send/Proceed to payment.
+#    Step 3 has NO file upload — IC via proposalIdNumber + declaration checkboxes.
+
+product_id: "PEP"
+product_name: "Easi Protector (Personal Accident)"
+portal: "great_eastern_gears"
+version: "1.0"
+entry_url: "/MY/AgencySales/quotations/introduce"
+group_id: "PA"
+
+navigation:
+  # Angular is slow — settle after Step 1 renders before filling
+  step1_wait_ms: 5000
+  # poll timeouts for plans page / plan selection / step 3 form
+  plans_timeout_ms: 30000
+  step3_timeout_ms: 30000
+
+actions:
+  get_quote:
+    strategy: attached_js_click   # buttons exist in DOM but Playwright reports
+                                  # them non-visible → state=attached + JS click
+  pa_group:
+    selector: "#product-class-PA"
+
+plans:
+  EP1: { selector: "#plan-btn-A" }
+  EP2: { selector: "#plan-btn-B" }
+  EP3: { selector: "#plan-btn-C" }
+  EP4: { selector: "#plan-btn-D" }
+
+# ── PA-8.2 (ChatGPT 2026-08-16): IdentityRequirements — profile-driven ──
+# What identity facts THIS product requires (not every product needs the
+# same fields). Consumed by src/identity/requirements.py.
+# (Review #3 / G4: full_name added so the completeness check moves out of
+# hand-written Python into the profile.)
+identity_requirements:
+  required:
+    - id_number
+    - dob
+    - gender
+    - full_name
+
+# ── POL-1 (2026-08-16): customer contact/address are NEVER defaulted ──
+# PA applicant is a nested object (ProfileGate only checks top-level), so
+# contact completeness is declared here and enforced in capability.validate().
+contact_requirements:
+  required:
+    - mobile
+    - email
+    - address1
+    - state
+
+# ── Review #3 / G4: profile-driven validation gate (PaProductCapability) ──
+# Business rules live HERE, not in Python. Gate = ProfileGate(binding.profile).
+# `allowed_values` carries the EP plan ladder + coverage_type enum. Identity
+# facts (id_number/dob/gender/full_name) are enforced by IdentityRequirements.
+request_schema:
+  required:
+    - coverage_type
+    - occupation
+    - plan
+    - applicant
+  optional:
+    - start_date
+    - end_date
+    - occupation_class
+    - optional_top_up
+    - addons
+    - execution_mode
+  allowed_values:
+    plan: ["EP1", "EP2", "EP3", "EP4"]
+    coverage_type: ["individual", "family"]
+
+sections:
+  - name: coverage_details
+    description: "Step 1 — coverage type, dates, occupation, DOB, vehicle indicator"
+    submit: "button:has-text('Continue')"
+    fields:
+      - name: coverage_type
+        selector: "input[type='radio'][value='I']"
+        type: radio
+        required: true
+        options: { js_click: true }   # radios are visually hidden
+
+      - name: start_date
+        selector: "#start-date"
+        type: date
+        required: true
+        format: "%d %b %Y"
+        options:
+          disabled: true              # native setter + input/change events
+          native_set: true
+
+      - name: end_date
+        selector: "#end-date"
+        type: date
+        required: true
+        format: "%d %b %Y"
+        options:
+          disabled: true
+          native_set: true
+
+      - name: occupation
+        selector: "#occupation"
+        type: text
+        required: true
+        options: { transform: uppercase }
+
+      - name: occupation_class
+        selector: "#occupation_class"
+        type: text
+        required: false
+        options: { force_enable: true }  # starts disabled; auto in recon
+
+      - name: birthday
+        selector: "#birthday"
+        type: date
+        required: true
+        format: "%d %b %Y"
+        options:
+          strategy: keyboard           # bsdatepicker mask ignores page.fill —
+                                       # must click → Ctrl+A → type → Tab
+
+      - name: vehicle_indicator
+        selector: "input[type='radio'][value='N']"
+        type: radio
+        required: true
+        options: { js_click: true }
+
+  - name: details
+    description: "Step 3 — applicant/proposal details (read-only E2E, no Send)"
+    submit: "button:has-text('Continue')"
+    fields:
+      - name: proposal_id_number
+        selector: "#proposalIdNumber"
+        type: text
+        required: true
+        options: { validation: identity }
+
+      - name: proposal_title
+        selector: "#proposalTitle"
+        type: text
+        required: true
+
+      - name: proposal_full_name
+        selector: "#proposalFullName"
+        type: text
+        required: true
+
+      - name: gender
+        selector: "input[type='radio'][value='M']"
+        type: radio
+        required: true
+        options: { js_click: true }
+
+      - name: proposal_nation
+        selector: "#proposalNation"
+        type: text
+        required: true
+
+      - name: proposal_race
+        selector: "#proposalRace"
+        type: text
+        required: false
+
+      - name: proposal_state
+        selector: "#proposalStateApplicant"
+        type: text
+        required: true
+
+      - name: proposal_address1
+        selector: "#proposalAddressLine1"
+        type: text
+        required: true
+
+      - name: proposal_mobile
+        selector: "#proposalMobileNumber"
+        type: text
+        required: true
+
+      - name: proposal_email
+        selector: "#proposalEmail"
+        type: text
+        required: true
+
+declarations:
+  - name: contact_correct
+    selector: "#mat-checkbox-2-input"
+    type: checkbox
+  - name: intermediary_declaration
+    selector: "#mat-checkbox-3-input"
+    type: checkbox
+  - name: original_nric_seen
+    selector: "#mat-checkbox-4-input"
+    type: checkbox

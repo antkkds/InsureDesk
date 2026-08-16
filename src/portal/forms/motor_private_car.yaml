@@ -28,6 +28,55 @@ portal: "great_eastern_gears"
 version: "2.0"
 entry_url: "/MY/AgencySales/quotations/introduce"
 
+# ── Motor-1 (ChatGPT 2026-08-16): profile-driven validation gate ──────────
+# The ProductCapability.validate() reads THIS section — business rules live
+# in the binding profile, NOT in Python. `required` = fields the REQUEST
+# must supply (no default can substitute); `optional` = fields with flow
+# defaults or AUTO-populated by the portal (vehicle lookup/NVIC).
+#
+# POL-1 (2026-08-16): customer-data fields are NEVER defaulted — the flow
+# must not fabricate owner identity/contact from test fixtures. Any missing
+# required field fails validation and the operator asks the customer.
+request_schema:
+  required:
+    - vehicle_number          # registration / plate
+    - place                   # usage state (postcode↔state validation)
+    - id_number               # owner identity (12 digits, NO dashes)
+    - full_name               # owner name (appears on the policy)
+    - mobile                  # owner contact (never defaulted)
+    - email                   # owner contact (never defaulted)
+    - address1                # owner address (never defaulted)
+    - marital_status          # owner attribute (GEARS requires; never defaulted)
+    - years_driving_exp       # owner attribute (GEARS requires; never defaulted)
+  optional:
+    - postal
+    - chassis
+    - engine
+    - engine_cc
+    - make
+    - model
+    - year_manufacture
+    - seating_capacity
+    - hire_purchase
+    - hire_purchase_company
+    - market_value
+    - start_date
+    - end_date
+    - add_ons
+    - check_referral
+    - tin
+    - brn
+    - save
+
+# ── PA-8.2 (ChatGPT 2026-08-16): IdentityRequirements — profile-driven ──
+# Motor identity needs id_number + full_name (NRIC 12-digit no-dash drives
+# the portal lookup; name appears on the policy). Different from PA's
+# requirements — that is the point of profile-driven requirements.
+identity_requirements:
+  required:
+    - id_number
+    - full_name
+
 sections:
   - name: quotation_details
     description: "Step 1 — applicant type & vehicle identifiers"

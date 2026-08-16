@@ -1,0 +1,219 @@
+# GEARS — Travel For More+ Short Term (PMT) FormSpec
+# Source: gears_research/travel_recon.md (2026-08-16, live-verified read-only recon)
+# Flow:  Trip details → Plans → Details → Payment
+# Entry: introduce → #product-class-TRAV → product-list?id=TRAV
+#        → items[1] "Travel For More+ Short Term" Get quote
+#        → /quotations/TRAV/PMT/{uuid}/detail
+# Second TRAV product: Travel For More+ Annual (PMA, no destination field —
+#                      NOT in this spec; PMA recon notes in travel_recon.md)
+#
+# ✅ LIVE-VERIFIED 2026-08-16 (read-only recon, quotes left as drafts, never
+#    submitted): Overseas → THAILAND / 7-day trip / Plan A / 1 adult →
+#    Premium payable MYR 63.00 (summary panel .summary-total-payable).
+#    Custom radio component app-pnc-radio-button → click visible
+#    label.rectangle.btn (NOT the hidden native input).
+
+product_id: "PMT"
+product_name: "Travel For More+ (Short Term)"
+portal: "great_eastern_gears"
+version: "1.0"
+entry_url: "/MY/AgencySales/quotations/introduce"
+group_id: "TRAV"
+product_index: 1            # 0 = Annual (PMA), 1 = Short Term (PMT) — DOM order
+
+navigation:
+  # Angular is slow — settle after Step 1 renders before filling
+  page_load_ms: 10000
+  step1_wait_ms: 5000
+  plans_timeout_ms: 30000
+  step3_timeout_ms: 30000
+
+actions:
+  get_quote:
+    strategy: attached_js_click   # buttons exist in DOM but Playwright reports
+                                  # non-visible → state=attached + JS click
+  trav_group:
+    selector: "#product-class-TRAV"
+  trip_type_radio:                # custom app-pnc-radio-button
+    strategy: label_click         # click visible label.rectangle.btn by text
+  destination:
+    strategy: autocomplete_type   # real keystrokes + mat-option click
+
+plans:
+  A: { selector: ".plan-select-box .pointer", text: "Plan A", adult_plus: "#plus-adult-A" }
+  B: { selector: ".plan-select-box .pointer", text: "Plan B", adult_plus: "#plus-adult-B" }
+  C: { selector: ".plan-select-box .pointer", text: "Plan C", adult_plus: "#plus-adult-C" }
+
+# ── Profile-driven validation gate (TravelProductCapability.validate) ──
+# Business rules live HERE, not in Python. Gate = ProfileGate(binding.profile).
+# `allowed_values` carries the plan ladder + trip/coverage enums. Identity
+# facts (id_number/full_name) are enforced by IdentityRequirements.
+request_schema:
+  required:
+    - trip_type
+    - destination
+    - coverage_type
+    - plan
+    - applicant
+  optional:
+    - start_date
+    - end_date
+    - adults
+    - addons
+    - execution_mode
+  allowed_values:
+    plan: ["A", "B", "C"]
+    trip_type: ["domestic", "overseas"]
+    coverage_type: ["insured_only", "insured_spouse", "family"]
+
+# What identity facts THIS product requires (step 3 proposal form)
+identity_requirements:
+  required:
+    - id_number
+    - full_name
+
+# ── POL-1 (2026-08-16): customer contact/address are NEVER defaulted ──
+# Travel applicant is a nested object (ProfileGate only checks top-level), so
+# contact completeness is declared here and enforced in capability.validate().
+contact_requirements:
+  required:
+    - mobile
+    - email
+    - address1
+    - state
+
+sections:
+  - name: trip_details
+    description: "Step 1 — trip type, destination, dates, coverage type, declaration"
+    submit: "button:has-text('Continue')"
+    fields:
+      - name: trip_type
+        selector: "label.rectangle.btn"
+        type: radio_label
+        required: true
+        options: { js_click: true, label_text: "Overseas" }
+        choices: ["domestic", "overseas"]
+        note: "custom app-pnc-radio-button; native input name=radioBasic (D=Domestic, O=Overseas); click the visible label"
+
+      - name: destination
+        selector: "#destination"
+        type: autocomplete
+        required: true
+        options:
+          strategy: type_and_pick   # real keystrokes → mat-option click
+          option_match: startswith  # e.g. "THAI" → THAILAND
+        note: "mat-autocomplete-trigger (combobox); visible only for Overseas"
+
+      - name: start_date
+        selector: "#start-date"
+        type: date
+        required: true
+        format: "%d %b %Y"
+        options: { native_set: true }
+
+      - name: end_date
+        selector: "#end-date"
+        type: date
+        required: true
+        format: "%d %b %Y"
+        options: { native_set: true }
+
+      - name: coverage_type
+        selector: "label.rectangle.btn"
+        type: radio_label
+        required: true
+        options: { js_click: true, label_text: "Insured Only" }
+        choices: ["insured_only", "insured_spouse", "family"]
+        note: "I=Insured Only, S=Insured & Spouse, F=Family"
+
+      - name: declaration
+        selector: "#mat-checkbox-1-input"
+        type: checkbox
+        required: true
+        note: "Malaysian citizen/PR/valid working permit declaration"
+
+  - name: plans
+    description: "Step 2 — plan card + traveller count"
+    submit: "button:has-text('Continue')"
+    fields:
+      - name: plan
+        selector: ".plan-select-box .pointer"
+        type: plan_card
+        required: true
+        options: { js_click: true, text_match: "Plan A" }
+        note: "cards are .pointer divs; per-plan adult steppers #plus-adult-A/B/C"
+
+      - name: adults
+        selector: "#plus-adult-A"
+        type: stepper
+        required: true
+        note: "default 0 — click + once for 1 adult"
+
+  - name: details
+    description: "Step 3 — proposer details + intermediary declarations"
+    fields:
+      - name: proposal_id_number
+        selector: "#proposalIdNumber"
+        type: text
+        required: true
+      - name: proposal_title
+        selector: "#proposalTitle"
+        type: text
+        required: true
+      - name: proposal_full_name
+        selector: "#proposalFullName"
+        type: text
+        required: true
+      - name: proposal_dob
+        selector: "#proposalDOB"
+        type: date
+        required: true
+        format: "%d %b %Y"
+        options: { strategy: keyboard }
+      - name: proposal_nation
+        selector: "#proposalNation"
+        type: text
+        required: true
+      - name: proposal_race
+        selector: "#proposalRace"
+        type: text
+        required: false
+      - name: proposal_state
+        selector: "#stateApplicant"
+        type: text
+        required: true
+      - name: proposal_address1
+        selector: "#proposalAddressLine1"
+        type: text
+        required: true
+      - name: proposal_mobile
+        selector: "#proposalMobileNumber"
+        type: text
+        required: true
+      - name: proposal_email
+        selector: "#proposalEmail"
+        type: text
+        required: true
+      - name: declaration_email
+        selector: "#mat-checkbox-4-input"
+        type: checkbox
+        required: true
+      - name: declaration_intermediary
+        selector: "#mat-checkbox-5-input"
+        type: checkbox
+        required: true
+      - name: declaration_nric_verified
+        selector: "#mat-checkbox-6-input"
+        type: checkbox
+        required: true
+      - name: questions_no
+        selector: "button:has-text('No')"
+        type: click_all_visible
+        required: false
+        note: "Y/N question pairs → No (read-only recon)"
+
+# ── Premium capture (portal final fact, server-side calc) ──
+premium:
+  strategy: page_text_regex
+  pattern: "Premium\\s+payable\\s*[:\\n]?\\s*MYR\\s*([\\d,]+\\.\\d{2})"
+  total_selector: ".summary-total-payable"

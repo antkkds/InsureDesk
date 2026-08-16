@@ -128,13 +128,13 @@ class TestManifestRegister:
         assert d["name"] == "insuredesk"
         assert d["type"] == "desktop_agent"
         assert d["transport"] == "http_pull"
-        assert "insurance.quote.calculate" in m.capability_names()
+        assert "insurance.quote.motor" in m.capability_names()
         # Phase 4.5: per-capability safety scope
         quote = next(
             item for item in d["provides"]
-            if "insurance.quote.calculate" in item
+            if "insurance.quote.motor" in item
         )
-        assert quote["insurance.quote.calculate"]["safety"] == "readonly"
+        assert quote["insurance.quote.motor"]["safety"] == "readonly"
 
     def test_t1_register_sets_online(self, fake_server):
         client = make_client(fake_server)
@@ -212,14 +212,14 @@ class TestCommandPolling:
         FakeUIPAIHandler.state.pending_commands[client.instance_id] = [
             {
                 "execution_id": "exec_123",
-                "capability": "insurance.quote.calculate",
+                "capability": "insurance.quote.motor",
                 "arguments": {"product": "IFE", "sum_insured": 100000},
             }
         ]
         commands = client.poll_commands()
         assert len(commands) == 1
         assert commands[0].execution_id == "exec_123"
-        assert commands[0].capability == "insurance.quote.calculate"
+        assert commands[0].capability == "insurance.quote.motor"
         assert commands[0].arguments == {"product": "IFE", "sum_insured": 100000}
 
     def test_poll_empty(self, fake_server):
@@ -234,18 +234,40 @@ class TestCommandPolling:
 
 
 class TestSimulationExecution:
-    def test_t4_command_loop_executes_quote(self, fake_server):
+    def test_t4_command_loop_executes_quote(self, fake_server, monkeypatch):
+        """Command loop executes a motor command through the real-only path.
+
+        Motor-2: execute is REAL-only — the flow entry is mocked here so the
+        unit test never touches the live GEARS portal.
+        """
+        async def fake_flow(payload, log, cdp_url="http://127.0.0.1:9333"):
+            return {
+                "ok": True, "status": "STEP3_OK", "quote_id": "Q_MOCK",
+                "premium": "1908.53", "submission_attempted": False,
+                "send_attempted": False, "issue_attempted": False,
+                "execution_mode": "real",
+            }
+
+        monkeypatch.setattr(
+            "src.quote.motor_flow.run_motor_quote_via_cdp", fake_flow
+        )
         client = make_client(fake_server)
         client.register()
         FakeUIPAIHandler.state.pending_commands[client.instance_id] = [
             {
-                "execution_id": "exec_sim",
-                "capability": "insurance.quote.calculate",
+                "execution_id": "exec_real",
+                "capability": "insurance.quote.motor",
                 "arguments": {
-                    "proposer_name": "Test User",
-                    "risk_class": "fire",
-                    "sum_insured": 500000,
-                    "execution_mode": "simulation",
+                    "vehicle_number": "VDL 1987",
+                    "place": "KUALA LUMPUR",
+                    "id_number": "881212145678",
+                    "full_name": "Fionn Liang",
+                    "mobile": "0123456789",
+                    "email": "fionn.liang@gmail.com",
+                    "address1": "12, Jalan Merdeka",
+                    "marital_status": "Single",
+                    "years_driving_exp": "5",
+                    "execution_mode": "real",
                 },
             }
         ]
@@ -268,12 +290,24 @@ class TestSimulationExecution:
         assert len(results) == 1
         body = results[0]["body"]
         assert body["status"] == "success"
-        assert body["execution_mode"] == "simulation"
+        assert body["execution_mode"] == "real"
         assert "quote_number" in body["result"] or "premium" in body["result"]
 
-    def test_quote_handler_direct(self):
-        """Quote handler executes against the local mock quote engine."""
+    def test_quote_handler_direct(self, monkeypatch):
+        """Quote handler executes against the mocked flow (never live portal)."""
         from src.agent.handlers import QuoteCapabilityHandler
+
+        async def fake_flow(payload, log, cdp_url="http://127.0.0.1:9333"):
+            return {
+                "ok": True, "status": "STEP3_OK", "quote_id": "Q_MOCK",
+                "premium": "1908.53", "submission_attempted": False,
+                "send_attempted": False, "issue_attempted": False,
+                "execution_mode": "real",
+            }
+
+        monkeypatch.setattr(
+            "src.quote.motor_flow.run_motor_quote_via_cdp", fake_flow
+        )
 
         import asyncio
 
@@ -281,15 +315,21 @@ class TestSimulationExecution:
         result = asyncio.run(
             handler.execute(
                 {
-                    "proposer_name": "Alice",
-                    "risk_class": "travel",
-                    "sum_insured": 20000,
-                    "execution_mode": "simulation",
+                    "vehicle_number": "VDL 1987",
+                    "place": "KUALA LUMPUR",
+                    "id_number": "881212145678",
+                    "full_name": "Fionn Liang",
+                    "mobile": "0123456789",
+                    "email": "fionn.liang@gmail.com",
+                    "address1": "12, Jalan Merdeka",
+                    "marital_status": "Single",
+                    "years_driving_exp": "5",
+                    "execution_mode": "real",
                 }
             )
         )
         assert result["status"] == "success"
-        assert result["result"]["proposer_name"] == "Alice"
+        assert result["result"]["premium"] is not None
 
 
 # ══════════════════════════════════════════════════════════════════════════════
